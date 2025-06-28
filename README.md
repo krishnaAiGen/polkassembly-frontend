@@ -10,6 +10,7 @@ A beautiful, modern chat interface built with Next.js, inspired by the Polkassem
 - 💾 **Persistent Storage**: JSON file-based database for chat history
 - 🔗 **API Integration**: Configurable external API endpoint
 - 📱 **Responsive Design**: Works on desktop and mobile devices
+- ☁️ **Serverless Ready**: Compatible with Vercel, AWS Lambda, and other serverless platforms
 
 ## Getting Started
 
@@ -57,7 +58,15 @@ If no API is configured or the API is unreachable, the application will use fall
 
 ### Database
 
-The application uses a simple JSON file (`chat-database.json`) to store user conversations. The file is automatically created when the application starts.
+The application uses a simple JSON file to store user conversations:
+- **Development**: The file is created in your project directory
+- **Production/Serverless**: The file is created in `/tmp/chat-database.json` for compatibility with platforms like Vercel
+
+**Note**: In serverless environments, the `/tmp` directory is ephemeral and data will be lost when the function instance is recycled. For production use, consider integrating with a persistent database like:
+- PostgreSQL
+- MongoDB
+- Redis
+- Any cloud database service
 
 ## Usage
 
@@ -104,6 +113,17 @@ src/
 2. **New Components**: Add in `src/components/`
 3. **Database Operations**: Extend `src/lib/database.ts`
 4. **Types**: Update `src/types/chat.ts`
+
+## Deployment
+
+### Vercel (Recommended)
+```bash
+npm run build
+```
+Then deploy to Vercel. The application is pre-configured for serverless deployment.
+
+### Other Platforms
+The application works on any platform that supports Next.js. For serverless platforms, the database automatically uses the `/tmp` directory.
 
 ## License
 

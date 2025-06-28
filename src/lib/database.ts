@@ -2,15 +2,16 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { ChatData, Message } from '@/types/chat'
 
-const DB_PATH = path.join(process.cwd(), 'chat-database.json')
+// Use /tmp directory for serverless environments (Vercel, AWS Lambda, etc.)
+const DB_PATH = path.join('/tmp', 'chat-database.json')
 
 export async function initializeDatabase(): Promise<void> {
   try {
     await fs.access(DB_PATH)
-    console.log('Database file exists')
+    console.log('Database file exists at:', DB_PATH)
   } catch (error) {
     // File doesn't exist, create it
-    console.log('Creating new database file')
+    console.log('Creating new database file at:', DB_PATH)
     const initialData: ChatData = {}
     await fs.writeFile(DB_PATH, JSON.stringify(initialData, null, 2))
   }
