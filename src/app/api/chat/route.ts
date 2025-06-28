@@ -42,42 +42,6 @@ function createStreamResponse(text: string, sources?: any[]) {
   })
 }
 
-// Function to filter sources based on web search settings
-function filterSources(sources: any[]): any[] {
-  const webSearchEnabled = process.env.WEB_SEARCH_ENABLED === 'true'
-  
-  if (!webSearchEnabled) {
-    // Filter out web search results
-    return sources.filter(source => 
-      source.source_type !== 'web_search' && 
-      source.source_type !== 'web' &&
-      source.source_type !== 'search'
-    )
-  }
-  
-  return sources
-}
-
-// Function to modify response text if web search results were filtered
-function modifyResponseForWebSearch(text: string, originalSources: any[], filteredSources: any[]): string {
-  const webSearchEnabled = process.env.WEB_SEARCH_ENABLED === 'true'
-  
-  if (!webSearchEnabled && originalSources.length > filteredSources.length) {
-    // Some sources were filtered out (likely web search results)
-    const webSearchCount = originalSources.length - filteredSources.length
-    
-    if (filteredSources.length === 0) {
-      // All sources were web search, replace with custom message
-      return "I couldn't find specific documentation or reliable sources for that query in our knowledge base. You might want to check the official Polkadot documentation or Polkassembly platform directly for the most up-to-date information."
-    } else {
-      // Some sources remain, just add a note
-      return text + "\n\nNote: Some additional web search results were filtered out to focus on verified sources."
-    }
-  }
-  
-  return text
-}
-
 // Function to call external API
 async function callExternalAPI(message: string): Promise<{ text: string, sources?: any[] }> {
   const apiUrl = process.env.API_BASE_URL
@@ -115,7 +79,7 @@ async function callExternalAPI(message: string): Promise<{ text: string, sources
   }
 
   try {
-    // Call your configured API with the correct format
+    // Call your configured API
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -123,7 +87,7 @@ async function callExternalAPI(message: string): Promise<{ text: string, sources
         // Add any required headers for your API
       },
       body: JSON.stringify({
-        question: message  // Changed from "message" to "question"
+        question: message
       })
     })
 
@@ -132,18 +96,11 @@ async function callExternalAPI(message: string): Promise<{ text: string, sources
     }
 
     const data: BackendApiResponse = await response.json()
-    const originalSources = data.sources || []
     
-    // Filter sources based on web search settings
-    const filteredSources = filterSources(originalSources)
-    
-    // Modify response text if needed
-    const responseText = data.answer || "I received your message but couldn't generate a proper response."
-    const modifiedText = modifyResponseForWebSearch(responseText, originalSources, filteredSources)
-    
+    // Return response exactly as received from backend
     return { 
-      text: modifiedText,
-      sources: filteredSources
+      text: data.answer || "I received your message but couldn't generate a proper response.",
+      sources: data.sources || []
     }
     
   } catch (error) {

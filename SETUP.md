@@ -28,10 +28,6 @@ Create a `.env` file in the root directory and add your API configuration:
 # Replace with your actual API endpoint
 API_BASE_URL=http://your-api-endpoint.com/query
 
-# Web search configuration
-# Set to true to show web search results, false to filter them out
-WEB_SEARCH_ENABLED=false
-
 # Examples:
 # For local development: API_BASE_URL=http://localhost:8000/query
 # For production: API_BASE_URL=https://your-api-domain.com/api/query
@@ -45,18 +41,11 @@ npm run dev
 ### 5. Open the application
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Configuration Options
-
-### Web Search Control
-- **WEB_SEARCH_ENABLED=true**: Shows all sources including web search results
-- **WEB_SEARCH_ENABLED=false**: Filters out web search results and shows only verified sources (wiki, documentation, etc.)
-
 ## Important Notes
 
 - The `.env` file is not included in the repository for security reasons
 - The `chat-database.json` file will be automatically created when you first use the application
 - Make sure your API endpoint accepts POST requests with the structure shown below
-- Web search results are automatically filtered based on your WEB_SEARCH_ENABLED setting
 
 ## API Requirements
 
@@ -82,11 +71,5 @@ Your API should:
     ]
   }
   ```
-
-### Source Types
-The application recognizes these source types:
-- `polkadot_wiki` - Official Polkadot documentation
-- `polkassembly` - Polkassembly platform content
-- `web_search`, `web`, `search` - Web search results (filtered when WEB_SEARCH_ENABLED=false)
 
 For more details, see the main [README.md](./README.md) file. 
