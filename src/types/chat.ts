@@ -12,6 +12,7 @@ export interface Message {
   timestamp: number
   isStreaming?: boolean
   sources?: Source[]
+  followUpQuestions?: string[]
 }
 
 export interface ChatData {
@@ -32,6 +33,7 @@ export interface StreamingResponse {
 export interface BackendApiResponse {
   answer: string
   sources: Source[]
+  follow_up_questions: string[]
   confidence: number
   context_used: boolean
   model_used: string

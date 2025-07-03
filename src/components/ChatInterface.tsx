@@ -34,13 +34,22 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
     return Date.now().toString() + Math.random().toString(36).substr(2, 9)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!inputText.trim() || isLoading) return
+  const handleFollowUpClick = (question: string) => {
+    // Set the input text and automatically submit the follow-up question
+    setInputText(question)
+    
+    // Small delay to ensure input is set, then submit
+    setTimeout(() => {
+      submitMessage(question)
+    }, 100)
+  }
+
+  const submitMessage = async (messageText: string) => {
+    if (!messageText.trim() || isLoading) return
 
     const userMessage: Message = {
       id: generateMessageId(),
-      text: inputText.trim(),
+      text: messageText.trim(),
       sender: 'user',
       timestamp: Date.now()
     }
@@ -80,6 +89,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
       const decoder = new TextDecoder()
       let accumulatedText = ''
       let sources: Source[] = []
+      let followUpQuestions: string[] = []
 
       if (reader) {
         while (true) {
@@ -98,7 +108,8 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
                   ...aiMessage,
                   text: accumulatedText,
                   isStreaming: false,
-                  sources: sources.length > 0 ? sources : undefined
+                  sources: sources.length > 0 ? sources : undefined,
+                  followUpQuestions: followUpQuestions.length > 0 ? followUpQuestions : undefined
                 }
                 onNewMessage(finalMessage)
                 setStreamingMessage(null)
@@ -119,6 +130,14 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
                     ...aiMessage,
                     text: accumulatedText,
                     sources: sources
+                  })
+                } else if (parsed.followUpQuestions) {
+                  followUpQuestions = parsed.followUpQuestions
+                  setStreamingMessage({
+                    ...aiMessage,
+                    text: accumulatedText,
+                    sources: sources,
+                    followUpQuestions: followUpQuestions
                   })
                 }
               } catch (e) {
@@ -141,6 +160,11 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await submitMessage(inputText)
   }
 
   return (
@@ -170,10 +194,18 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
       <div className="flex-1 bg-white/60 backdrop-blur-sm p-4 overflow-y-auto chat-scroll">
         <div className="space-y-4">
           {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+            <MessageBubble 
+              key={message.id} 
+              message={message} 
+              onFollowUpClick={handleFollowUpClick}
+            />
           ))}
           {streamingMessage && (
-            <MessageBubble message={streamingMessage} isStreaming={true} />
+            <MessageBubble 
+              message={streamingMessage} 
+              isStreaming={true} 
+              onFollowUpClick={handleFollowUpClick}
+            />
           )}
           {isLoading && !streamingMessage && <TypingIndicator />}
           <div ref={messagesEndRef} />

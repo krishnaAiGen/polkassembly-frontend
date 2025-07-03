@@ -3,7 +3,7 @@ import { initializeDatabase, saveUserMessage } from '@/lib/database'
 import { Message, BackendApiResponse } from '@/types/chat'
 
 // Function to create streaming response
-function createStreamResponse(text: string, sources?: any[]) {
+function createStreamResponse(text: string, sources?: any[], followUpQuestions?: string[]) {
   const encoder = new TextEncoder()
   
   const stream = new ReadableStream({
@@ -27,6 +27,12 @@ function createStreamResponse(text: string, sources?: any[]) {
         controller.enqueue(encoder.encode(`data: ${sourcesData}\n\n`))
       }
       
+      // Send follow-up questions if available
+      if (followUpQuestions && followUpQuestions.length > 0) {
+        const followUpData = JSON.stringify({ followUpQuestions: followUpQuestions })
+        controller.enqueue(encoder.encode(`data: ${followUpData}\n\n`))
+      }
+      
       // Send completion signal
       controller.enqueue(encoder.encode('data: [DONE]\n\n'))
       controller.close()
@@ -43,7 +49,7 @@ function createStreamResponse(text: string, sources?: any[]) {
 }
 
 // Function to call external API
-async function callExternalAPI(message: string): Promise<{ text: string, sources?: any[] }> {
+async function callExternalAPI(message: string): Promise<{ text: string, sources?: any[], followUpQuestions?: string[] }> {
   const apiUrl = process.env.API_BASE_URL
   
   if (!apiUrl || apiUrl === 'https://api.example.com') {
@@ -75,7 +81,14 @@ async function callExternalAPI(message: string): Promise<{ text: string, sources
       }
     ]
     
-    return { text, sources: mockSources }
+    // Add mock follow-up questions
+    const mockFollowUpQuestions = [
+      "How do I participate in Polkadot governance?",
+      "What are the different types of proposals in Polkadot?",
+      "How does the voting mechanism work?"
+    ]
+    
+    return { text, sources: mockSources, followUpQuestions: mockFollowUpQuestions }
   }
 
   try {
@@ -100,14 +113,16 @@ async function callExternalAPI(message: string): Promise<{ text: string, sources
     // Return response exactly as received from backend
     return { 
       text: data.answer || "I received your message but couldn't generate a proper response.",
-      sources: data.sources || []
+      sources: data.sources || [],
+      followUpQuestions: data.follow_up_questions || []
     }
     
   } catch (error) {
     console.error('External API error:', error)
     return { 
       text: "I'm having trouble connecting to the external service right now. Please try again later.",
-      sources: []
+      sources: [],
+      followUpQuestions: []
     }
   }
 }
@@ -140,7 +155,7 @@ export async function POST(request: NextRequest) {
     await saveUserMessage(normalizedUsername, userMessage)
 
     // Get AI response from external API
-    const { text: aiResponseText, sources } = await callExternalAPI(message)
+    const { text: aiResponseText, sources, followUpQuestions } = await callExternalAPI(message)
     
     // Save AI response to database
     const aiMessage: Message = {
@@ -148,13 +163,14 @@ export async function POST(request: NextRequest) {
       text: aiResponseText,
       sender: 'ai',
       timestamp: Date.now(),
-      sources: sources
+      sources: sources,
+      followUpQuestions: followUpQuestions
     }
     
     await saveUserMessage(normalizedUsername, aiMessage)
 
     // Return streaming response
-    return createStreamResponse(aiResponseText, sources)
+    return createStreamResponse(aiResponseText, sources, followUpQuestions)
     
   } catch (error) {
     console.error('Chat API error:', error)
