@@ -49,7 +49,7 @@ function createStreamResponse(text: string, sources?: any[], followUpQuestions?:
 }
 
 // Function to call external API
-async function callExternalAPI(message: string): Promise<{ text: string, sources?: any[], followUpQuestions?: string[] }> {
+async function callExternalAPI(message: string, userId: string, clientIP: string): Promise<{ text: string, sources?: any[], followUpQuestions?: string[], remainingRequests?: number }> {
   const apiUrl = process.env.API_BASE_URL
   
   if (!apiUrl || apiUrl === 'https://api.example.com') {
@@ -88,33 +88,68 @@ async function callExternalAPI(message: string): Promise<{ text: string, sources
       "How does the voting mechanism work?"
     ]
     
-    return { text, sources: mockSources, followUpQuestions: mockFollowUpQuestions }
+    return { 
+      text, 
+      sources: mockSources, 
+      followUpQuestions: mockFollowUpQuestions, 
+      remainingRequests: 10 
+    }
   }
 
   try {
     // Call your configured API
+    // Request body matching backend API specification
+    const requestBody = {
+      question: message,           // Required: 1-500 characters
+      user_id: userId,            // Required: 1-100 characters
+      client_ip: clientIP,        // Required: 7-45 characters
+      max_chunks: 5,              // Optional: 1-10, default: 5
+      include_sources: true,      // Optional: default: true
+      custom_prompt: undefined    // Optional: custom system prompt
+    }
+    
+    console.log('Sending request to backend:', JSON.stringify(requestBody, null, 2))
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         // Add any required headers for your API
       },
-      body: JSON.stringify({
-        question: message
-      })
+      body: JSON.stringify(requestBody)
     })
 
     if (!response.ok) {
-      throw new Error(`API responded with status: ${response.status}`)
+      // Try to get error details from response
+      let errorDetails = ''
+      try {
+        const errorResponse = await response.text()
+        errorDetails = ` - Response: ${errorResponse}`
+      } catch (e) {
+        errorDetails = ' - Could not read error response'
+      }
+      
+      console.error(`Backend API error - Status: ${response.status}${errorDetails}`)
+      throw new Error(`API responded with status: ${response.status}${errorDetails}`)
     }
 
     const data: BackendApiResponse = await response.json()
+    
+    console.log('Backend response received:', {
+      answer_length: data.answer?.length || 0,
+      sources_count: data.sources?.length || 0,
+      follow_up_count: data.follow_up_questions?.length || 0,
+      remaining_requests: data.remaining_requests,
+      confidence: data.confidence,
+      processing_time: data.processing_time_ms
+    })
     
     // Return response exactly as received from backend
     return { 
       text: data.answer || "I received your message but couldn't generate a proper response.",
       sources: data.sources || [],
-      followUpQuestions: data.follow_up_questions || []
+      followUpQuestions: data.follow_up_questions || [],
+      remainingRequests: data.remaining_requests || 0
     }
     
   } catch (error) {
@@ -122,7 +157,8 @@ async function callExternalAPI(message: string): Promise<{ text: string, sources
     return { 
       text: "I'm having trouble connecting to the external service right now. Please try again later.",
       sources: [],
-      followUpQuestions: []
+      followUpQuestions: [],
+      remainingRequests: 10
     }
   }
 }
@@ -144,6 +180,22 @@ export async function POST(request: NextRequest) {
     // Normalize username to lowercase
     const normalizedUsername = username.trim().toLowerCase()
 
+    // Get client IP for backend tracking
+    let clientIP = request.headers.get('x-forwarded-for') || 
+                   request.headers.get('x-real-ip') || 
+                   'unknown'
+    
+    // Ensure IP meets backend validation (7-45 characters)
+    // Handle IPv6 localhost (::1) and other short IPs
+    if (clientIP === '::1' || clientIP === '127.0.0.1' || clientIP.length < 7) {
+      clientIP = '127.0.0.1'  // Use IPv4 localhost instead
+    }
+    
+    // If still too short, use a fallback
+    if (clientIP.length < 7) {
+      clientIP = '192.168.1.100'  // Fallback IP that meets requirements
+    }
+
     // Save user message to database
     const userMessage: Message = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -155,12 +207,26 @@ export async function POST(request: NextRequest) {
     await saveUserMessage(normalizedUsername, userMessage)
 
     // Get AI response from external API
-    const { text: aiResponseText, sources, followUpQuestions } = await callExternalAPI(message)
+    const { text: aiResponseText, sources, followUpQuestions, remainingRequests } = await callExternalAPI(message, normalizedUsername, clientIP)
     
+    // Log web search sources to terminal if present
+    if (sources && sources.length > 0) {
+      console.log('Web search sources returned:', JSON.stringify(sources, null, 2));
+    }
+    
+    // Log rate limit info for monitoring
+    console.log(`Chat request - User: ${normalizedUsername}, IP: ${clientIP}, Remaining: ${remainingRequests || 'unknown'}`)
+    
+    // Add rate limit warning if remaining requests is low
+    let finalResponseText = aiResponseText
+    if (remainingRequests !== undefined && remainingRequests < 5) {
+      finalResponseText += '\n\n⚠️ **Warning**: You are approaching the usage limit. You have ' + remainingRequests + ' requests remaining this minute. Please slow down to avoid being blocked.'
+    }
+
     // Save AI response to database
     const aiMessage: Message = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      text: aiResponseText,
+      text: finalResponseText,
       sender: 'ai',
       timestamp: Date.now(),
       sources: sources,
@@ -170,7 +236,7 @@ export async function POST(request: NextRequest) {
     await saveUserMessage(normalizedUsername, aiMessage)
 
     // Return streaming response
-    return createStreamResponse(aiResponseText, sources, followUpQuestions)
+    return createStreamResponse(finalResponseText, sources, followUpQuestions)
     
   } catch (error) {
     console.error('Chat API error:', error)
