@@ -10,7 +10,8 @@ interface MessageBubbleProps {
 
 export default function MessageBubble({ message, isStreaming = false, onFollowUpClick }: MessageBubbleProps) {
   const isUser = message.sender === 'user'
-  const hasLinks = message.sources && message.sources.length > 0
+  const validSources = (message.sources || []).filter(s => s.url && s.url.trim() !== '')
+  const hasLinks = validSources.length > 0
   const hasFollowUps = message.followUpQuestions && message.followUpQuestions.length > 0
   
   const formatTime = (timestamp: number) => {
@@ -26,6 +27,14 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
         return '🏛️'
       default:
         return '🔗'
+    }
+  }
+
+  if (hasLinks && !isUser) {
+    // Log sources as JSON
+    if (typeof window !== 'undefined') {
+      // Only log in browser
+      console.log('Web search sources:', JSON.stringify(message.sources, null, 2));
     }
   }
 
@@ -53,20 +62,20 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
             <div className="mt-3 pt-3 border-t border-primary-100">
               <p className="text-xs font-medium text-gray-600 mb-2">📖 Related Sources:</p>
               <div className="space-y-2">
-                {message.sources!.map((source, index) => (
-                  <div key={index} className="bg-primary-50 rounded-lg p-2 border border-primary-100">
+                {validSources.map((source, index) => (
+                  <div key={index} className="bg-primary-50 rounded-lg p-2 border border-primary-100 w-full overflow-hidden">
                     <a
                       href={source.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-start space-x-2 text-xs hover:text-primary-700 transition-colors group"
+                      className="flex items-start space-x-2 text-xs hover:text-primary-700 transition-colors group w-full"
                     >
-                      <span className="text-sm">{getSourceIcon(source.source_type)}</span>
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-800 group-hover:text-primary-700 line-clamp-2">
+                      <span className="text-sm flex-shrink-0">{getSourceIcon(source.source_type)}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-800 group-hover:text-primary-700 line-clamp-2 break-words">
                           {source.title}
                         </div>
-                        <div className="text-gray-500 truncate mt-1">
+                        <div className="text-gray-500 truncate mt-1 break-all">
                           {source.url}
                         </div>
                         <div className="mt-1">
@@ -75,7 +84,7 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
                           </span>
                         </div>
                       </div>
-                      <div className="text-primary-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="text-primary-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>

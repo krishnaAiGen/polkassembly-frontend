@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Message, Source } from '@/types/chat'
 import MessageBubble from './MessageBubble'
 import TypingIndicator from './TypingIndicator'
+import ThinkingAnimation from './ThinkingAnimation'
 
 interface ChatInterfaceProps {
   currentUser: string
@@ -193,6 +194,11 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
       {/* Messages */}
       <div className="flex-1 bg-white/60 backdrop-blur-sm p-4 overflow-y-auto chat-scroll">
         <div className="space-y-4">
+          {isLoading && (
+            <div className="flex justify-start">
+              <ThinkingAnimation isVisible={true} />
+            </div>
+          )}
           {messages.map((message) => (
             <MessageBubble 
               key={message.id} 
@@ -207,7 +213,6 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
               onFollowUpClick={handleFollowUpClick}
             />
           )}
-          {isLoading && !streamingMessage && <TypingIndicator />}
           <div ref={messagesEndRef} />
         </div>
       </div>
