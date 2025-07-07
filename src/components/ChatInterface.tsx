@@ -58,19 +58,15 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
     // Add user message
     onNewMessage(userMessage)
     setInputText('')
+    
+    console.log('Setting isLoading to true - thinking animation should show now')
     setIsLoading(true)
 
-    // Create AI message placeholder for streaming
-    const aiMessage: Message = {
-      id: generateMessageId(),
-      text: '',
-      sender: 'ai',
-      timestamp: Date.now(),
-      isStreaming: true
-    }
-    setStreamingMessage(aiMessage)
+    // Don't set streaming message immediately - let thinking animation show first
+    let aiMessage: Message | null = null
 
     try {
+      console.log('Starting fetch request to backend...')
       // Send message to API with normalized username
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -86,6 +82,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
         throw new Error('Failed to get response')
       }
 
+      console.log('Response received, starting to read stream...')
       const reader = response.body?.getReader()
       const decoder = new TextDecoder()
       let accumulatedText = ''
@@ -105,21 +102,35 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
               const data = line.slice(6)
               if (data === '[DONE]') {
                 // Streaming complete
-                const finalMessage: Message = {
-                  ...aiMessage,
-                  text: accumulatedText,
-                  isStreaming: false,
-                  sources: sources.length > 0 ? sources : undefined,
-                  followUpQuestions: followUpQuestions.length > 0 ? followUpQuestions : undefined
+                if (aiMessage) {
+                  const finalMessage: Message = {
+                    ...aiMessage,
+                    text: accumulatedText,
+                    isStreaming: false,
+                    sources: sources.length > 0 ? sources : undefined,
+                    followUpQuestions: followUpQuestions.length > 0 ? followUpQuestions : undefined
+                  }
+                  onNewMessage(finalMessage)
+                  setStreamingMessage(null)
                 }
-                onNewMessage(finalMessage)
-                setStreamingMessage(null)
                 return
               }
 
               try {
                 const parsed = JSON.parse(data)
                 if (parsed.content) {
+                  // Create AI message on first content if not exists
+                  if (!aiMessage) {
+                    console.log('First content received - creating streaming message (thinking animation should disappear)')
+                    aiMessage = {
+                      id: generateMessageId(),
+                      text: '',
+                      sender: 'ai',
+                      timestamp: Date.now(),
+                      isStreaming: true
+                    }
+                  }
+                  
                   accumulatedText += parsed.content
                   setStreamingMessage({
                     ...aiMessage,
@@ -127,19 +138,23 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
                   })
                 } else if (parsed.sources) {
                   sources = parsed.sources
-                  setStreamingMessage({
-                    ...aiMessage,
-                    text: accumulatedText,
-                    sources: sources
-                  })
+                  if (aiMessage) {
+                    setStreamingMessage({
+                      ...aiMessage,
+                      text: accumulatedText,
+                      sources: sources
+                    })
+                  }
                 } else if (parsed.followUpQuestions) {
                   followUpQuestions = parsed.followUpQuestions
-                  setStreamingMessage({
-                    ...aiMessage,
-                    text: accumulatedText,
-                    sources: sources,
-                    followUpQuestions: followUpQuestions
-                  })
+                  if (aiMessage) {
+                    setStreamingMessage({
+                      ...aiMessage,
+                      text: accumulatedText,
+                      sources: sources,
+                      followUpQuestions: followUpQuestions
+                    })
+                  }
                 }
               } catch (e) {
                 console.error('Error parsing streaming data:', e)
@@ -159,6 +174,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
       onNewMessage(errorMessage)
       setStreamingMessage(null)
     } finally {
+      console.log('Setting isLoading to false')
       setIsLoading(false)
     }
   }
@@ -194,11 +210,6 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
       {/* Messages */}
       <div className="flex-1 bg-white/60 backdrop-blur-sm p-4 overflow-y-auto chat-scroll">
         <div className="space-y-4">
-          {isLoading && (
-            <div className="flex justify-start">
-              <ThinkingAnimation isVisible={true} />
-            </div>
-          )}
           {messages.map((message) => (
             <MessageBubble 
               key={message.id} 
@@ -206,13 +217,20 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
               onFollowUpClick={handleFollowUpClick}
             />
           ))}
-          {streamingMessage && (
-            <MessageBubble 
-              message={streamingMessage} 
-              isStreaming={true} 
-              onFollowUpClick={handleFollowUpClick}
-            />
-          )}
+          {isLoading && !streamingMessage && (() => {
+            console.log('Rendering ThinkingAnimation - isLoading:', isLoading, 'streamingMessage:', streamingMessage)
+            return <ThinkingAnimation isVisible={true} />
+          })()}
+          {streamingMessage && (() => {
+            console.log('Rendering streaming message:', streamingMessage.text.substring(0, 20) + '...')
+            return (
+              <MessageBubble 
+                message={streamingMessage} 
+                isStreaming={true} 
+                onFollowUpClick={handleFollowUpClick}
+              />
+            )
+          })()}
           <div ref={messagesEndRef} />
         </div>
       </div>

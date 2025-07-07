@@ -50,11 +50,6 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
         >
           <p className="text-sm leading-relaxed whitespace-pre-wrap">
             {message.text}
-            {isStreaming && (
-              <span className="inline-block w-2 h-4 bg-current opacity-75 ml-1 animate-pulse">
-                |
-              </span>
-            )}
           </p>
           
           {/* Sources/Links Section */}
