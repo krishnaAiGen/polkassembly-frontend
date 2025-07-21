@@ -226,7 +226,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
               <div className="w-5 h-5 bg-white rounded-full"></div>
             </div>
             <div>
-              <h2 className="font-semibold text-gray-800">Polkassembly Chat</h2>
+              <h2 className="font-semibold text-gray-800">Klara Chat</h2>
               <p className="text-sm text-gray-600">Welcome, {displayName}!</p>
             </div>
           </div>
