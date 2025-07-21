@@ -5,7 +5,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Polkassembly Chat',
+  title: 'Klara Chat',
   description: 'Chat interface for Polkadot Governance',
 }
 

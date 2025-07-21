@@ -44,9 +44,9 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
             <div className="w-8 h-8 bg-white rounded-full"></div>
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-pink-600 bg-clip-text text-transparent">
-            Polkassembly
+            Klara
           </h1>
-          <p className="text-gray-600 mt-2">The Ultimate Hub for Polkadot Governance</p>
+          <p className="text-gray-600 mt-2">The Ultimate AI Hub for Polkaseembly</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

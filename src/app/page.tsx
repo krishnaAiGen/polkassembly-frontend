@@ -5,7 +5,6 @@ import LoginForm from '@/components/LoginForm'
 import ChatInterface from '@/components/ChatInterface'
 import { ChatData, Message } from '@/types/chat'
 import { ChatCacheManager } from '@/lib/chatCache'
-import CacheDebugPanel from '@/components/CacheDebugPanel'
 
 export default function Home() {
   const [currentUser, setCurrentUser] = useState<string | null>(null)
@@ -85,8 +84,6 @@ export default function Home() {
       <div className="fixed top-1/3 right-1/4 w-3 h-3 bg-primary-700 rotate-45 opacity-25"></div>
       <div className="fixed bottom-20 right-1/3 w-5 h-5 bg-pink-600 rotate-45 opacity-10"></div>
       
-      {/* Cache Debug Panel (development only) */}
-      <CacheDebugPanel currentUser={currentUser} />
     </main>
   )
 } 

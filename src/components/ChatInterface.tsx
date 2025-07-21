@@ -17,6 +17,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
   const [inputText, setInputText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [streamingMessage, setStreamingMessage] = useState<Message | null>(null)
+  const [abortController, setAbortController] = useState<AbortController | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -45,6 +46,24 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
     }, 100)
   }
 
+  const handleStopGeneration = () => {
+    if (abortController) {
+      abortController.abort()
+      setAbortController(null)
+    }
+    setIsLoading(false)
+    setStreamingMessage(null)
+    
+    // Add a message indicating the generation was stopped
+    const stopMessage: Message = {
+      id: generateMessageId(),
+      text: 'Response generation stopped.',
+      sender: 'ai',
+      timestamp: Date.now()
+    }
+    onNewMessage(stopMessage)
+  }
+
   const submitMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return
 
@@ -62,6 +81,10 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
     console.log('Setting isLoading to true - thinking animation should show now')
     setIsLoading(true)
 
+    // Create abort controller for this request
+    const controller = new AbortController()
+    setAbortController(controller)
+
     // Don't set streaming message immediately - let thinking animation show first
     let aiMessage: Message | null = null
 
@@ -75,7 +98,8 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
           message: userMessage.text,
           username: currentUser, // currentUser is already normalized
           history: messages
-        })
+        }),
+        signal: controller.signal
       })
 
       if (!response.ok) {
@@ -165,6 +189,13 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
       }
     } catch (error) {
       console.error('Chat error:', error)
+      
+      // Don't show error message if request was aborted
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Request was aborted')
+        return
+      }
+      
       const errorMessage: Message = {
         id: generateMessageId(),
         text: 'Sorry, I encountered an error. Please try again.',
@@ -176,6 +207,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
     } finally {
       console.log('Setting isLoading to false')
       setIsLoading(false)
+      setAbortController(null) // Clean up the controller
     }
   }
 
@@ -194,7 +226,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
               <div className="w-5 h-5 bg-white rounded-full"></div>
             </div>
             <div>
-              <h2 className="font-semibold text-gray-800">Polkassembly Chat</h2>
+              <h2 className="font-semibold text-gray-800">Klara Chat</h2>
               <p className="text-sm text-gray-600">Welcome, {displayName}!</p>
             </div>
           </div>
@@ -219,7 +251,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
           ))}
           {isLoading && !streamingMessage && (() => {
             console.log('Rendering ThinkingAnimation - isLoading:', isLoading, 'streamingMessage:', streamingMessage)
-            return <ThinkingAnimation isVisible={true} />
+            return <ThinkingAnimation isVisible={true} onStop={handleStopGeneration} />
           })()}
           {streamingMessage && (() => {
             console.log('Rendering streaming message:', streamingMessage.text.substring(0, 20) + '...')
@@ -245,7 +277,6 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Type your message..."
             className="flex-1 px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all duration-200 text-gray-900 placeholder-gray-500 bg-white"
-            disabled={isLoading}
           />
           <button
             type="submit"

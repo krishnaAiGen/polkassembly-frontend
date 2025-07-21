@@ -1,6 +1,9 @@
 'use client'
 
 import { Message } from '@/types/chat'
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface MessageBubbleProps {
   message: Message
@@ -48,10 +51,16 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
               : 'bg-white/90 backdrop-blur-sm text-gray-800 border border-primary-100'
           }`}
         >
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">
-            {message.text}
-          </p>
-          
+          {isUser ? (
+            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words text-white">
+              {message.text}
+            </p>
+          ) : (
+            <div className="prose prose-sm max-w-none prose-p:text-gray-800 prose-headings:text-gray-800 prose-strong:text-gray-800 prose-ul:text-gray-800 prose-ol:text-gray-800 prose-li:text-gray-800 prose-a:text-primary-600 hover:prose-a:text-primary-700">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
+            </div>
+          )}
+
           {/* Sources/Links Section */}
           {hasLinks && !isUser && (
             <div className="mt-3 pt-3 border-t border-primary-100">
@@ -127,18 +136,14 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
         </div>
       </div>
       
-      {/* Avatar */}
-      <div className={`w-8 h-8 rounded-full flex-shrink-0 ${isUser ? 'order-1 mr-3' : 'order-2 ml-3'}`}>
-        {isUser ? (
+      {/* Avatar - Only show for user */}
+      {isUser && (
+        <div className="w-8 h-8 rounded-full flex-shrink-0 order-1 mr-3">
           <div className="w-full h-full bg-gradient-to-br from-primary-400 to-pink-400 rounded-full flex items-center justify-center">
             <span className="text-white text-xs font-medium">U</span>
           </div>
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
-            <div className="w-4 h-4 bg-white rounded-sm"></div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 } 
