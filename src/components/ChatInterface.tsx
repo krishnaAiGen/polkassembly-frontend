@@ -18,7 +18,9 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
   const [isLoading, setIsLoading] = useState(false)
   const [streamingMessage, setStreamingMessage] = useState<Message | null>(null)
   const [abortController, setAbortController] = useState<AbortController | null>(null)
+  const [isUserScrolling, setIsUserScrolling] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Create display name from normalized username
@@ -28,9 +30,37 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  const isNearBottom = () => {
+    const container = messagesContainerRef.current
+    if (!container) return true
+    
+    const { scrollTop, scrollHeight, clientHeight } = container
+    // Consider "near bottom" if within 100px of the bottom
+    return scrollHeight - scrollTop - clientHeight < 100
+  }
+
+  const handleScroll = () => {
+    if (!isNearBottom()) {
+      setIsUserScrolling(true)
+    } else {
+      setIsUserScrolling(false)
+    }
+  }
+
   useEffect(() => {
-    scrollToBottom()
-  }, [messages, streamingMessage])
+    const container = messagesContainerRef.current
+    if (container) {
+      container.addEventListener('scroll', handleScroll)
+      return () => container.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
+
+  useEffect(() => {
+    // Only auto-scroll if user hasn't manually scrolled up
+    if (!isUserScrolling) {
+      scrollToBottom()
+    }
+  }, [messages, streamingMessage, isUserScrolling])
 
   const generateMessageId = () => {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9)
@@ -240,7 +270,10 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
       </div>
 
       {/* Messages */}
-      <div className="flex-1 bg-white/60 backdrop-blur-sm p-4 overflow-y-auto chat-scroll">
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 bg-white/60 backdrop-blur-sm p-4 overflow-y-auto chat-scroll"
+      >
         <div className="space-y-4">
           {messages.map((message) => (
             <MessageBubble 
