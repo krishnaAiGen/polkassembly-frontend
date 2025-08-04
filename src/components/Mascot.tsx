@@ -1,50 +1,50 @@
 'use client';
 
-import React,
-{
-	useEffect,
-	useState
-} from 'react';
-import {
-	mascotGifs,
-	MascotGif
-} from '../lib/mascots'; // Adjust path as needed
+import React from 'react';
+import { mascotGifs, MascotGif } from '../lib/mascots';
 
 interface MascotProps {
-	type: 'welcome' | 'loading' | 'error' | 'taskdone';
-	onComplete?: () => void; // Callback for when the animation/display is done
-	duration?: number; // How long to show the mascot in ms
+  type: 'welcome' | 'loading' | 'error' | 'taskdone';
+  onStop?: () => void; // Callback for the stop button on the loading mascot
 }
 
-const Mascot: React.FC < MascotProps > = ({
-	type,
-	onComplete,
-	duration
-}) => {
-	const [mascot, setMascot] = useState < MascotGif | null > (null);
+const getRandomGifUrl = (type: MascotProps['type']): string | null => {
+  const relevantGifs = mascotGifs.filter((gif: MascotGif) => gif.type === type);
+  if (relevantGifs.length === 0) return null;
+  const randomIndex = Math.floor(Math.random() * relevantGifs.length);
+  return relevantGifs[randomIndex].url;
+};
 
-	useEffect(() => {
-		const relevantGifs = mascotGifs.filter((gif: MascotGif) => gif.type === type);
-		if (relevantGifs.length > 0) {
-			const randomIndex = Math.floor(Math.random() * relevantGifs.length);
-			setMascot(relevantGifs[randomIndex]);
-		}
+const Mascot: React.FC<MascotProps> = ({ type, onStop }) => {
+  const mascotUrl = getRandomGifUrl(type);
 
-		if (duration && onComplete) {
-			const timer = setTimeout(onComplete, duration);
-			return () => clearTimeout(timer);
-		}
-	}, [type, duration, onComplete]);
+  if (!mascotUrl) {
+    return null;
+  }
 
-	if (!mascot) {
-		return null;
-	}
-
-	return (
-		<div className="fixed bottom-0 right-0 m-4 z-50">
-      <img src={mascot.url} alt={`${type} mascot`} className="w-48 h-auto" />
+  return (
+    <div className="flex justify-start mb-4 animate-fade-in">
+      <div className="flex items-end space-x-2">
+        <div className="p-1">
+          <img 
+            src={mascotUrl} 
+            alt={`${type} mascot`} 
+            className="w-28 h-auto"
+          />
+        </div>
+        
+        {type === 'loading' && onStop && (
+           <button
+             onClick={onStop}
+             className="mb-2 w-8 h-8 bg-primary-500 hover:bg-primary-600 rounded-full flex items-center justify-center transition-colors flex-shrink-0 shadow-md"
+             title="Stop generation"
+           >
+             <div className="w-3 h-3 bg-white" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0% 100%)' }}></div>
+           </button>
+        )}
+      </div>
     </div>
-	);
+  );
 };
 
 export default Mascot;
