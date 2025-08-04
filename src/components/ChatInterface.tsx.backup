@@ -257,7 +257,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
             </div>
             <div>
               <h2 className="font-semibold text-gray-800">Klara Chat</h2>
-              <p className="text-sm text-gray-600 flex items-center gap-2">Welcome, {displayName}! <span className="bg-primary-100 text-primary-700 text-xs px-2 py-1 rounded-full font-medium">{Math.ceil(messages.length / 2) + (streamingMessage ? 1 : 0)} conversations</span></p>
+              <p className="text-sm text-gray-600">Welcome, {displayName}!</p>
             </div>
           </div>
           <button
