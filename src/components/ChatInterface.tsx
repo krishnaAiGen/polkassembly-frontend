@@ -137,19 +137,24 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
   const renderedStreamingMessage = React.useMemo(() => {
     if (!streamingMessage) return null;
     return (
-      <div className="flex items-start justify-start space-x-2">
-        <MessageBubble 
-          message={streamingMessage} 
-          isStreaming={true} 
-          onFollowUpClick={handleFollowUpClick}
-        />
-        <button
-          onClick={handleStopGeneration}
-          className="mt-2 w-8 h-8 bg-primary-500 hover:bg-primary-600 rounded-full flex items-center justify-center transition-colors flex-shrink-0 shadow-md"
-          title="Stop generation"
-        >
-          <div className="w-3 h-3 bg-white" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0% 100%)' }}></div>
-        </button>
+      <div className="flex justify-start mb-4">
+        <div className="max-w-[70%] order-1">
+          <MessageBubble 
+            message={streamingMessage} 
+            isStreaming={true} 
+            onFollowUpClick={handleFollowUpClick}
+          />
+          {/* Stop button positioned at the bottom of the streaming message */}
+          <div className="flex justify-start mt-2">
+            <button
+              onClick={handleStopGeneration}
+              className="w-8 h-8 bg-primary-500 hover:bg-primary-600 rounded-full flex items-center justify-center transition-colors flex-shrink-0 shadow-md"
+              title="Stop generation"
+            >
+              <div className="w-3 h-3 bg-white" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0% 100%)' }}></div>
+            </button>
+          </div>
+        </div>
       </div>
     );
   }, [streamingMessage, handleStopGeneration]);
