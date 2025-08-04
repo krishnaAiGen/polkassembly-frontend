@@ -5,6 +5,8 @@ import { Message, Source } from '@/types/chat'
 import MessageBubble from './MessageBubble'
 import TypingIndicator from './TypingIndicator'
 import ThinkingAnimation from './ThinkingAnimation'
+import Mascot from './Mascot';
+import { MascotGif } from '../lib/mascots';
 
 interface ChatInterfaceProps {
   currentUser: string
@@ -19,6 +21,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
   const [streamingMessage, setStreamingMessage] = useState<Message | null>(null)
   const [abortController, setAbortController] = useState<AbortController | null>(null)
   const [isUserScrolling, setIsUserScrolling] = useState(false)
+  const [currentMascot, setCurrentMascot] = useState<MascotGif['type'] | null>('welcome');
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -61,6 +64,17 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
       scrollToBottom()
     }
   }, [messages, streamingMessage, isUserScrolling])
+
+  useEffect(() => {
+    // Show welcome mascot on initial load
+    const welcomeTimer = setTimeout(() => {
+      if (currentMascot === 'welcome') {
+        setCurrentMascot(null);
+      }
+    }, 3000); // Show for 3 seconds
+
+    return () => clearTimeout(welcomeTimer);
+  }, []);
 
   const generateMessageId = () => {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9)
@@ -108,8 +122,8 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
     onNewMessage(userMessage)
     setInputText('')
     
-    console.log('Setting isLoading to true - thinking animation should show now')
-    setIsLoading(true)
+    setIsLoading(true);
+    setCurrentMascot('loading');
 
     // Create abort controller for this request
     const controller = new AbortController()
@@ -166,6 +180,8 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
                   }
                   onNewMessage(finalMessage)
                   setStreamingMessage(null)
+                  setCurrentMascot('taskdone');
+                  setTimeout(() => setCurrentMascot(null), 3000); // Show for 3 seconds
                 }
                 return
               }
@@ -234,10 +250,15 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
       }
       onNewMessage(errorMessage)
       setStreamingMessage(null)
+      setCurrentMascot('error');
+      setTimeout(() => setCurrentMascot(null), 5000); // Show for 5 seconds
     } finally {
       console.log('Setting isLoading to false')
       setIsLoading(false)
       setAbortController(null) // Clean up the controller
+      if (currentMascot === 'loading') {
+        setCurrentMascot(null);
+      }
     }
   }
 
@@ -299,6 +320,14 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
           <div ref={messagesEndRef} />
         </div>
       </div>
+
+      {currentMascot && (
+        <Mascot 
+          type={currentMascot} 
+          onComplete={() => setCurrentMascot(null)}
+          duration={currentMascot === 'welcome' || currentMascot === 'taskdone' || currentMascot === 'error' ? 3000 : undefined}
+        />
+      )}
 
       {/* Input */}
       <div className="bg-white/80 backdrop-blur-sm rounded-b-2xl shadow-lg p-4 border-t border-primary-200">
