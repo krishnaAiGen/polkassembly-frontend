@@ -52,6 +52,10 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
               : 'bg-white/90 backdrop-blur-sm text-gray-800 border border-primary-100'
           }`}
         >
+          {!isUser && (
+             <p className="text-xs font-bold text-primary-700 mb-2">Klara</p>
+          )}
+
           {isUser ? (
             <p className="text-sm leading-relaxed whitespace-pre-wrap break-words text-white">
               {message.text}
@@ -59,6 +63,7 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
           ) : (
             <div className="prose prose-sm max-w-none prose-p:text-gray-800 prose-headings:text-gray-800 prose-strong:text-gray-800 prose-ul:text-gray-800 prose-ol:text-gray-800 prose-li:text-gray-800 prose-a:text-primary-600 hover:prose-a:text-primary-700">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
+              {isStreaming && <span className="streaming-cursor"></span>}
             </div>
           )}
 
