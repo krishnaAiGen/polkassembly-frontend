@@ -25,6 +25,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
   const [isUserScrolling, setIsUserScrolling] = useState(false)
   const [mascotType, setMascotType] = useState<'welcome' | 'loading' | 'error' | 'taskdone' | null>('welcome');
   const [hasUserStartedTyping, setHasUserStartedTyping] = useState(false);
+  const [totalStats, setTotalStats] = useState<{totalConversations: number, totalUsers: number} | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -36,6 +37,28 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
   const displayName = isWalletAddress 
     ? `${currentUser.slice(0, 6)}...${currentUser.slice(-6)}`
     : currentUser.charAt(0).toUpperCase() + currentUser.slice(1)
+
+  // Fetch total statistics on component mount
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/stats');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setTotalStats({
+              totalConversations: data.totalConversations,
+              totalUsers: data.totalUsers
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -353,6 +376,14 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
                 <span className="bg-primary-100 text-primary-700 text-xs px-2 py-1 rounded-full font-medium">
                   {Math.ceil(messages.length / 2) + (streamingMessage ? 1 : 0)} conversations
                 </span>
+                {totalStats && (
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <span>🎉</span>
+                    <span>{totalStats.totalConversations} total conversations</span>
+                    <span>•</span>
+                    <span>{totalStats.totalUsers} users</span>
+                  </div>
+                )}
               </p>
             </div>
           </div>
