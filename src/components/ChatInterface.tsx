@@ -3,12 +3,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { Message, Source } from '@/types/chat'
 import MessageBubble from './MessageBubble'
-import TypingIndicator from './TypingIndicator'
-import ThinkingAnimation from './ThinkingAnimation'
 import Mascot from './Mascot';
-import { MascotGif } from '../lib/mascots';
 import AddressInline from './AddressInline';
-import React from 'react'; // Added missing import
+import React from 'react';
 
 interface ChatInterfaceProps {
   currentUser: string
