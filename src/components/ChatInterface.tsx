@@ -24,12 +24,35 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
   const [isUserScrolling, setIsUserScrolling] = useState(false)
   const [mascotType, setMascotType] = useState<'welcome' | 'loading' | 'error' | 'taskdone' | null>('welcome');
   const [hasUserStartedTyping, setHasUserStartedTyping] = useState(false);
+  const [totalStats, setTotalStats] = useState<{totalConversations: number, totalUsers: number} | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Create display name from normalized username
   const displayName = currentUser.charAt(0).toUpperCase() + currentUser.slice(1)
+
+  // Fetch total statistics on component mount
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/stats');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setTotalStats({
+              totalConversations: data.totalConversations,
+              totalUsers: data.totalUsers
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -336,7 +359,20 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
             </div>
             <div>
               <h2 className="font-semibold text-gray-800">Polkassembly Chat</h2>
-              <p className="text-sm text-gray-600 flex items-center gap-2">Welcome, {displayName}! <span className="bg-primary-100 text-primary-700 text-xs px-2 py-1 rounded-full font-medium">{Math.ceil(messages.length / 2) + (streamingMessage ? 1 : 0)} conversations</span></p>
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <span>Welcome, {displayName}!</span>
+                <span className="bg-primary-100 text-primary-700 text-xs px-2 py-1 rounded-full font-medium">
+                  {Math.ceil(messages.length / 2) + (streamingMessage ? 1 : 0)} conversations
+                </span>
+                {totalStats && (
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <span>🎉</span>
+                    <span>{totalStats.totalConversations} total conversations</span>
+                    <span>•</span>
+                    <span>{totalStats.totalUsers} users</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <button
