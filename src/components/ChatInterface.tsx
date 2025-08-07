@@ -354,7 +354,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
   }
 
   return (
-    <div className="max-w-4xl mx-auto h-screen flex flex-col">
+    <div className="max-w-4xl mx-auto h-full flex flex-col">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm rounded-t-2xl shadow-lg p-4 border-b border-primary-200">
         <div className="flex items-center justify-between">
