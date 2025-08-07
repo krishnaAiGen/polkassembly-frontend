@@ -20,6 +20,17 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
   const hasLinks = validSources.length > 0
   const hasFollowUps = message.followUpQuestions && message.followUpQuestions.length > 0
   
+  // Check if currentUser is a wallet address or username
+  const isWalletAddress = currentUser && (currentUser.length > 20 || currentUser.includes('0x') || currentUser.includes('1') || currentUser.includes('2') || currentUser.includes('3') || currentUser.includes('4') || currentUser.includes('5') || currentUser.includes('6') || currentUser.includes('7') || currentUser.includes('8') || currentUser.includes('9'))
+  
+  // Get user display info
+  const userDisplayName = currentUser ? (isWalletAddress 
+    ? `${currentUser.slice(0, 6)}...${currentUser.slice(-6)}`
+    : currentUser.charAt(0).toUpperCase() + currentUser.slice(1)
+  ) : ''
+  
+  const userInitial = currentUser ? currentUser.charAt(0).toUpperCase() : 'U'
+  
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp)
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -59,7 +70,11 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
           )}
           {isUser && currentUser && (
             <div className="mb-2">
-              <AddressInline address={currentUser} iconSize={14} textClassName="text-white/80 text-xs" />
+              {isWalletAddress ? (
+                <AddressInline address={currentUser} iconSize={14} textClassName="text-white/80 text-xs" />
+              ) : (
+                <span className="text-white/80 text-xs font-medium">{userDisplayName}</span>
+              )}
             </div>
           )}
 
@@ -180,7 +195,7 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
       {isUser && (
         <div className="w-8 h-8 rounded-full flex-shrink-0 order-1 mr-3">
           <div className="w-full h-full bg-gradient-to-br from-primary-400 to-pink-400 rounded-full flex items-center justify-center">
-            <span className="text-white text-xs font-medium">U</span>
+            <span className="text-white text-xs font-medium">{userInitial}</span>
           </div>
         </div>
       )}

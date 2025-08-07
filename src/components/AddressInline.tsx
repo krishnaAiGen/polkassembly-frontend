@@ -23,6 +23,9 @@ function AddressInline({
   textClassName,
   truncateLength = 12
 }: Props) {
+  // Check if this is actually a wallet address (contains hex characters or is very long)
+  const isWalletAddress = address && (address.length > 20 || address.includes('0x') || /[0-9a-fA-F]{20,}/.test(address))
+  
   // Create display text from address if not provided
   const displayText = addressDisplayText || 
     (address.length > truncateLength 
@@ -38,7 +41,7 @@ function AddressInline({
       )}
       title={address}
     >
-      {showIdenticon && address && (
+      {showIdenticon && address && isWalletAddress && (
         <Identicon
           className='image identicon'
           value={address}

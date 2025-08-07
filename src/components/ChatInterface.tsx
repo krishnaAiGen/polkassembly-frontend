@@ -29,8 +29,11 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Check if currentUser is a wallet address (longer than typical username) or username
+  const isWalletAddress = currentUser.length > 20 || currentUser.includes('0x') || currentUser.includes('1') || currentUser.includes('2') || currentUser.includes('3') || currentUser.includes('4') || currentUser.includes('5') || currentUser.includes('6') || currentUser.includes('7') || currentUser.includes('8') || currentUser.includes('9')
+  
   // Create display name from wallet address or username
-  const displayName = currentUser.length > 20 
+  const displayName = isWalletAddress 
     ? `${currentUser.slice(0, 6)}...${currentUser.slice(-6)}`
     : currentUser.charAt(0).toUpperCase() + currentUser.slice(1)
 
@@ -341,7 +344,16 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
             </div>
             <div>
               <h2 className="font-semibold text-gray-800">Polkassembly Chat</h2>
-              <p className="text-sm text-gray-600 flex items-center gap-2">Welcome, <AddressInline address={currentUser} iconSize={16} textClassName="text-gray-600" />! <span className="bg-primary-100 text-primary-700 text-xs px-2 py-1 rounded-full font-medium">{Math.ceil(messages.length / 2) + (streamingMessage ? 1 : 0)} conversations</span></p>
+              <p className="text-sm text-gray-600 flex items-center gap-2">
+                Welcome, {isWalletAddress ? (
+                  <AddressInline address={currentUser} iconSize={16} textClassName="text-gray-600" />
+                ) : (
+                  <span className="text-gray-600 font-medium">{displayName}</span>
+                )}! 
+                <span className="bg-primary-100 text-primary-700 text-xs px-2 py-1 rounded-full font-medium">
+                  {Math.ceil(messages.length / 2) + (streamingMessage ? 1 : 0)} conversations
+                </span>
+              </p>
             </div>
           </div>
           <button
