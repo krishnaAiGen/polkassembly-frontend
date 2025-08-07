@@ -209,6 +209,24 @@ export async function POST(request: NextRequest) {
     // Get AI response from external API
     const { text: aiResponseText, sources, followUpQuestions, remainingRequests } = await callExternalAPI(message, normalizedUsername, clientIP)
     
+    // Check if the answer seems insufficient (short responses, apologetic responses, etc.)
+    const isInsufficientAnswer = 
+      aiResponseText.length < 100 || // Very short responses
+      aiResponseText.toLowerCase().includes("i don't know") ||
+      aiResponseText.toLowerCase().includes("i'm not sure") ||
+      aiResponseText.toLowerCase().includes("sorry, i couldn't find") ||
+      aiResponseText.toLowerCase().includes("i don't have enough information") ||
+      aiResponseText.toLowerCase().includes("unable to find") ||
+      aiResponseText.toLowerCase().includes("no specific information");
+    
+    // Random logic for follow-up questions: 30% chance (when random is 1, 3, or 7 out of 1-10)
+    // OR always show if answer is insufficient
+    const randomNumber = Math.floor(Math.random() * 10) + 1; // Generate 1-10
+    const shouldShowFollowUps = (randomNumber === 1 || randomNumber === 3 || randomNumber === 7) || isInsufficientAnswer;
+    const filteredFollowUpQuestions = shouldShowFollowUps ? (followUpQuestions || []) : [];
+    
+    console.log(`Follow-up logic: random=${randomNumber}, insufficient=${isInsufficientAnswer}, showing=${shouldShowFollowUps}, questions=${filteredFollowUpQuestions.length}`);
+    
     // Log web search sources to terminal if present
     if (sources && sources.length > 0) {
       console.log('Web search sources returned:', JSON.stringify(sources, null, 2));
@@ -230,13 +248,13 @@ export async function POST(request: NextRequest) {
       sender: 'ai',
       timestamp: Date.now(),
       sources: sources,
-      followUpQuestions: followUpQuestions
+      followUpQuestions: filteredFollowUpQuestions // Use filtered follow-up questions
     }
     
     await saveUserMessage(normalizedUsername, aiMessage)
 
     // Return streaming response
-    return createStreamResponse(finalResponseText, sources, followUpQuestions)
+    return createStreamResponse(finalResponseText, sources, filteredFollowUpQuestions) // Pass filtered follow-up questions
     
   } catch (error) {
     console.error('Chat API error:', error)
