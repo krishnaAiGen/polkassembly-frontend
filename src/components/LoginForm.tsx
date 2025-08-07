@@ -21,16 +21,58 @@ export default function LoginForm({ onLoginSuccess, onLoginError }: WalletLoginF
   const [accounts, setAccounts] = useState<any[]>([]);
   const [availableWallets, setAvailableWallets] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDetectingWallets, setIsDetectingWallets] = useState(true);
   const [walletService, setWalletService] = useState<WalletService | null>(null);
   
   // Username login state
   const [loginMethod, setLoginMethod] = useState<'wallet' | 'username'>('wallet');
   const [username, setUsername] = useState<string>('');
+
+  // Function to get display name for wallet
+  const getWalletDisplayName = (walletName: string): string => {
+    switch (walletName) {
+      case EWallet.POLKADOT:
+        return 'Polkadot.js';
+      case EWallet.SUBWALLET:
+        return 'SubWallet';
+      case EWallet.TALISMAN:
+        return 'Talisman';
+      default:
+        return walletName;
+    }
+  };
   useEffect(() => {
     const initWalletService = () => {
       const service = new WalletService();
       setWalletService(service);
-      setAvailableWallets(service.getAvailableWallets());
+      
+      // Try to detect wallets immediately
+      const immediateWallets = service.getAvailableWallets();
+      
+      if (immediateWallets.length > 0) {
+        // If wallets are found immediately, show them
+        setAvailableWallets(immediateWallets);
+        setIsDetectingWallets(false);
+      } else {
+        // If no wallets found immediately, try multiple times with increasing delays
+        const checkWallets = (attempt: number) => {
+          const wallets = service.getAvailableWallets();
+          if (wallets.length > 0) {
+            setAvailableWallets(wallets);
+            setIsDetectingWallets(false);
+          } else if (attempt < 3) {
+            // Try up to 3 times with increasing delays
+            setTimeout(() => checkWallets(attempt + 1), 300 * attempt);
+          } else {
+            // Give up after 3 attempts
+            setAvailableWallets([]);
+            setIsDetectingWallets(false);
+          }
+        };
+        
+        // Start checking with a 300ms delay
+        setTimeout(() => checkWallets(1), 300);
+      }
     };
 
     if (typeof window !== 'undefined') {
@@ -237,18 +279,32 @@ export default function LoginForm({ onLoginSuccess, onLoginError }: WalletLoginF
               <label className="block text-sm font-medium text-gray-700">
                 Select Wallet
               </label>
-              <div className="flex items-center gap-2">
-                {availableWallets.map((wallet: string) => (
-                  <WalletButton
-                    key={wallet}
-                    disabled={isLoading}
-                    wallet={wallet as unknown as EWallet}
-                    onClick={handleWalletSelect}
-                    label={wallet}
-                    selectedWallet={selectedWallet}
-                  />
-                ))}
-              </div>
+              {isDetectingWallets ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-600">Detecting wallets...</p>
+                </div>
+              ) : availableWallets.length > 0 ? (
+                <div className="flex items-center gap-2">
+                  {availableWallets.map((wallet: string) => (
+                    <WalletButton
+                      key={wallet}
+                      disabled={isLoading}
+                      wallet={wallet as unknown as EWallet}
+                      onClick={handleWalletSelect}
+                      label={getWalletDisplayName(wallet)}
+                      selectedWallet={selectedWallet}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-600 mb-2">No supported wallets found</p>
+                  <p className="text-xs text-gray-500">
+                    Please install one of our supported wallets: Polkadot.js, SubWallet, or Talisman
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="mb-4">

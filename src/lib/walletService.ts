@@ -2,6 +2,7 @@ import { InjectedWindow, InjectedAccount } from '@polkadot/extension-inject/type
 import { stringToHex } from '@polkadot/util';
 import { getSubstrateAddress } from '@/lib/utils/getSubstrateAddress';
 import { WEB3_AUTH_SIGN_MESSAGE } from './signatureVerification';
+import { EWallet } from '@/types/wallet';
 
 export class WalletService {
   private injectedWindow: Window & InjectedWindow;
@@ -72,6 +73,23 @@ export class WalletService {
   }
 
   getAvailableWallets(): string[] {
-    return Object.keys(this.injectedWindow.injectedWeb3 || {});
+    // Ensure injectedWeb3 is available
+    if (!this.injectedWindow.injectedWeb3) {
+      console.log('No injectedWeb3 found in window');
+      return [];
+    }
+
+    const allWallets = Object.keys(this.injectedWindow.injectedWeb3);
+    
+    // Only return wallets that are supported in our EWallet enum
+    const supportedWallets = [EWallet.POLKADOT, EWallet.SUBWALLET, EWallet.TALISMAN];
+    
+    const filteredWallets = allWallets.filter(wallet => supportedWallets.includes(wallet as EWallet));
+    
+    console.log('Available wallets in browser:', allWallets);
+    console.log('Supported wallets:', supportedWallets);
+    console.log('Filtered wallets:', filteredWallets);
+    
+    return filteredWallets;
   }
 } 
