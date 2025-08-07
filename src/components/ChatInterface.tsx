@@ -7,6 +7,7 @@ import TypingIndicator from './TypingIndicator'
 import ThinkingAnimation from './ThinkingAnimation'
 import Mascot from './Mascot';
 import { MascotGif } from '../lib/mascots';
+import AddressInline from './AddressInline';
 import React from 'react'; // Added missing import
 
 interface ChatInterfaceProps {
@@ -28,8 +29,10 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Create display name from normalized username
-  const displayName = currentUser.charAt(0).toUpperCase() + currentUser.slice(1)
+  // Create display name from wallet address or username
+  const displayName = currentUser.length > 20 
+    ? `${currentUser.slice(0, 6)}...${currentUser.slice(-6)}`
+    : currentUser.charAt(0).toUpperCase() + currentUser.slice(1)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -130,9 +133,10 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
         key={message.id} 
         message={message} 
         onFollowUpClick={handleFollowUpClick}
+        currentUser={currentUser}
       />
     ));
-  }, [messages]);
+  }, [messages, currentUser]);
 
   const renderedStreamingMessage = React.useMemo(() => {
     if (!streamingMessage) return null;
@@ -143,6 +147,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
             message={streamingMessage} 
             isStreaming={true} 
             onFollowUpClick={handleFollowUpClick}
+            currentUser={currentUser}
           />
           {/* Stop button positioned at the bottom of the streaming message */}
           <div className="flex justify-start mt-2">
@@ -336,7 +341,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
             </div>
             <div>
               <h2 className="font-semibold text-gray-800">Polkassembly Chat</h2>
-              <p className="text-sm text-gray-600 flex items-center gap-2">Welcome, {displayName}! <span className="bg-primary-100 text-primary-700 text-xs px-2 py-1 rounded-full font-medium">{Math.ceil(messages.length / 2) + (streamingMessage ? 1 : 0)} conversations</span></p>
+              <p className="text-sm text-gray-600 flex items-center gap-2">Welcome, <AddressInline address={currentUser} iconSize={16} textClassName="text-gray-600" />! <span className="bg-primary-100 text-primary-700 text-xs px-2 py-1 rounded-full font-medium">{Math.ceil(messages.length / 2) + (streamingMessage ? 1 : 0)} conversations</span></p>
             </div>
           </div>
           <button

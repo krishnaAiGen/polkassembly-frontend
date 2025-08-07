@@ -5,14 +5,16 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Tooltip } from 'react-tooltip';
+import AddressInline from './AddressInline';
 
 interface MessageBubbleProps {
   message: Message
   isStreaming?: boolean
   onFollowUpClick?: (question: string) => void
+  currentUser?: string
 }
 
-export default function MessageBubble({ message, isStreaming = false, onFollowUpClick }: MessageBubbleProps) {
+export default function MessageBubble({ message, isStreaming = false, onFollowUpClick, currentUser }: MessageBubbleProps) {
   const isUser = message.sender === 'user'
   const validSources = (message.sources || []).filter(s => s.url && s.url.trim() !== '')
   const hasLinks = validSources.length > 0
@@ -54,6 +56,11 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
         >
           {!isUser && (
              <p className="text-xs font-bold text-primary-700 mb-2">Klara</p>
+          )}
+          {isUser && currentUser && (
+            <div className="mb-2">
+              <AddressInline address={currentUser} iconSize={14} textClassName="text-white/80 text-xs" />
+            </div>
           )}
 
           {isUser ? (
