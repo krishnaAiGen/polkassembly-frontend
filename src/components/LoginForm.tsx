@@ -104,6 +104,22 @@ export default function LoginForm({ onLoginSuccess, onLoginError }: WalletLoginF
         // For username login, we just use the username as the user identifier
         const normalizedUsername = username.trim().toLowerCase();
         
+        // Initialize user in database
+        const initResponse = await fetch('/api/init-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: normalizedUsername,
+          }),
+        });
+
+        if (!initResponse.ok) {
+          const errorData = await initResponse.json();
+          throw new Error(errorData.error || 'Failed to initialize user');
+        }
+
         // Save auth data locally
         AuthService.saveAuthData({
           address: normalizedUsername,
