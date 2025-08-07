@@ -7,6 +7,7 @@ import TypingIndicator from './TypingIndicator'
 import ThinkingAnimation from './ThinkingAnimation'
 import Mascot from './Mascot';
 import { MascotGif } from '../lib/mascots';
+import AddressInline from './AddressInline';
 import React from 'react'; // Added missing import
 
 interface ChatInterfaceProps {
@@ -29,8 +30,13 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Create display name from normalized username
-  const displayName = currentUser.charAt(0).toUpperCase() + currentUser.slice(1)
+  // Check if currentUser is a wallet address (longer than typical username) or username
+  const isWalletAddress = currentUser.length > 20 || currentUser.includes('0x') || currentUser.includes('1') || currentUser.includes('2') || currentUser.includes('3') || currentUser.includes('4') || currentUser.includes('5') || currentUser.includes('6') || currentUser.includes('7') || currentUser.includes('8') || currentUser.includes('9')
+  
+  // Create display name from wallet address or username
+  const displayName = isWalletAddress 
+    ? `${currentUser.slice(0, 6)}...${currentUser.slice(-6)}`
+    : currentUser.charAt(0).toUpperCase() + currentUser.slice(1)
 
   // Fetch total statistics on component mount
   useEffect(() => {
@@ -153,9 +159,10 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
         key={message.id} 
         message={message} 
         onFollowUpClick={handleFollowUpClick}
+        currentUser={currentUser}
       />
     ));
-  }, [messages]);
+  }, [messages, currentUser]);
 
   const renderedStreamingMessage = React.useMemo(() => {
     if (!streamingMessage) return null;
@@ -166,6 +173,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
             message={streamingMessage} 
             isStreaming={true} 
             onFollowUpClick={handleFollowUpClick}
+            currentUser={currentUser}
           />
           {/* Stop button positioned at the bottom of the streaming message */}
           <div className="flex justify-start mt-2">
@@ -359,8 +367,12 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
             </div>
             <div>
               <h2 className="font-semibold text-gray-800">Polkassembly Chat</h2>
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span>Welcome, {displayName}!</span>
+              <p className="text-sm text-gray-600 flex items-center gap-2">
+                Welcome, {isWalletAddress ? (
+                  <AddressInline address={currentUser} iconSize={16} textClassName="text-gray-600" />
+                ) : (
+                  <span className="text-gray-600 font-medium">{displayName}</span>
+                )}! 
                 <span className="bg-primary-100 text-primary-700 text-xs px-2 py-1 rounded-full font-medium">
                   {Math.ceil(messages.length / 2) + (streamingMessage ? 1 : 0)} conversations
                 </span>
@@ -372,7 +384,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
                     <span>{totalStats.totalUsers} users</span>
                   </div>
                 )}
-              </div>
+              </p>
             </div>
           </div>
           <button

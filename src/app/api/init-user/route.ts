@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     
     const { username } = await request.json()
     
-    if (!username || typeof username !== 'string') {
+    if (!username) {
       return NextResponse.json(
         { success: false, error: 'Username is required' },
         { status: 400 }
@@ -18,14 +18,20 @@ export async function POST(request: NextRequest) {
     // Normalize username to lowercase
     const normalizedUsername = username.trim().toLowerCase()
 
+    // Initialize user in database
     await initializeUser(normalizedUsername)
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ 
+      success: true, 
+      message: 'User initialized successfully',
+      username: normalizedUsername
+    })
+    
   } catch (error) {
-    console.error('Init user error:', error)
+    console.error('Init user API error:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to initialize user' },
       { status: 500 }
     )
   }
-} 
+}

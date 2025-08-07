@@ -15,20 +15,7 @@ export interface Message {
   followUpQuestions?: string[]
 }
 
-export interface ChatData {
-  [username: string]: Message[]
-}
 
-export interface ApiResponse {
-  success: boolean
-  data?: any
-  error?: string
-}
-
-export interface StreamingResponse {
-  content: string
-  done: boolean
-}
 
 export interface BackendApiRequest {
   question: string           // Required: 1-500 characters

@@ -1,62 +1,88 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import LoginForm from '@/components/LoginForm'
-import ChatInterface from '@/components/ChatInterface'
-import { ChatData, Message } from '@/types/chat'
-import { ChatCacheManager } from '@/lib/chatCache'
+import React, { useState, useEffect } from 'react';
+import LoginForm from '@/components/LoginForm';
+import ChatInterface from '@/components/ChatInterface';
+import { Message } from '@/types/chat';
+import { AuthService } from '@/lib/authService';
+import { ChatCacheManager } from '@/lib/chatCache';
 
 export default function Home() {
-  const [currentUser, setCurrentUser] = useState<string | null>(null)
-  const [chatData, setChatData] = useState<ChatData>({})
-  const [userMessages, setUserMessages] = useState<Message[]>([])
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  const [user, setUser] = useState<any>(null);
+  const [error, setError] = useState<string>('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   useEffect(() => {
-    if (currentUser) {
-      loadUserChatHistory(currentUser)
+    // Check for existing authentication on mount
+    const authData = AuthService.getAuthData();
+    if (authData) {
+      setUser({ address: authData.address, wallet: authData.wallet });
     }
-  }, [currentUser])
+  }, []);
+
+  useEffect(() => {
+    if (user?.address) {
+      loadUserChatHistory(user.address);
+    }
+  }, [user]);
 
   const loadUserChatHistory = async (username: string) => {
-    setIsLoadingHistory(true)
+    setIsLoadingHistory(true);
     try {
       // Use cache manager to get messages (checks cache first, then API)
-      const messages = await ChatCacheManager.getCachedMessages(username)
-      setUserMessages(messages)
-      console.log(`Loaded ${messages.length} messages for ${username}`)
+      const messages = await ChatCacheManager.getCachedMessages(username);
+      setMessages(messages);
+      console.log(`Loaded ${messages.length} messages for ${username}`);
     } catch (error) {
-      console.error('Error loading chat history:', error)
-      setUserMessages([])
+      console.error('Error loading chat history:', error);
+      setMessages([]);
     } finally {
-      setIsLoadingHistory(false)
+      setIsLoadingHistory(false);
     }
-  }
+  };
 
-  const handleLogin = (username: string) => {
-    setCurrentUser(username)
-  }
+  const handleLoginSuccess = (userData: any) => {
+    setUser(userData);
+    setError('');
+  };
 
-  const handleLogout = () => {
-    setCurrentUser(null)
-    setUserMessages([])
-  }
+  const handleLoginError = (errorMessage: string) => {
+    setError(errorMessage);
+  };
 
   const handleNewMessage = (message: Message) => {
     // Update local state
-    setUserMessages(prev => [...prev, message])
+    setMessages(prev => [...prev, message]);
     
     // Update cache with new message
-    if (currentUser) {
-      ChatCacheManager.addMessageToCache(currentUser, message)
+    if (user?.address) {
+      ChatCacheManager.addMessageToCache(user.address, message);
     }
-  }
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setMessages([]);
+    AuthService.logout();
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-pink-50">
       <div className="container mx-auto px-4 py-8">
-        {!currentUser ? (
-          <LoginForm onLogin={handleLogin} />
+        {!user ? (
+          <>
+            {error && (
+              <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            )}
+
+            <LoginForm 
+              onLoginSuccess={handleLoginSuccess}
+              onLoginError={handleLoginError}
+            />
+          </>
         ) : (
           <>
             {isLoadingHistory ? (
@@ -67,9 +93,9 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <ChatInterface
-                currentUser={currentUser}
-                messages={userMessages}
+              <ChatInterface 
+                currentUser={user.address}
+                messages={messages}
                 onNewMessage={handleNewMessage}
                 onLogout={handleLogout}
               />
@@ -85,5 +111,5 @@ export default function Home() {
       <div className="fixed bottom-20 right-1/3 w-5 h-5 bg-pink-600 rotate-45 opacity-10"></div>
       
     </main>
-  )
+  );
 } 
