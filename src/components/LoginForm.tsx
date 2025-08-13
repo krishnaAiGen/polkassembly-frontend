@@ -243,7 +243,7 @@ export default function LoginForm({ onLoginSuccess, onLoginError }: WalletLoginF
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-pink-600 bg-clip-text text-transparent">
               Klara
             </h1>
-            <p className="text-gray-600 mt-2">The Ultimate AI Hub for Polkaseembly</p>
+            <p className="text-gray-600 mt-2">The Ultimate AI Hub for Polkassembly</p>
           </div>
 
           {/* Login Method Toggle */}
