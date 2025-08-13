@@ -393,6 +393,22 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
         </div>
       </div>
 
+      {/* Beta Feedback Notice */}
+      <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white px-4 py-2 text-center shadow-md">
+        <p className="text-sm font-medium">
+          🚀 This is the beta version of Klara for testing. Please share any feedback or issues you encounter{' '}
+          <a 
+            href="https://form.typeform.com/to/NXegXtAO" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-white underline hover:text-yellow-100 font-bold"
+          >
+            here
+          </a>
+          ! 📝
+        </p>
+      </div>
+
       {/* Messages */}
       <div 
         ref={messagesContainerRef}

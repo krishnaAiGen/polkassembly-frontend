@@ -24,9 +24,9 @@ export default function LoginForm({ onLoginSuccess, onLoginError }: WalletLoginF
   const [isDetectingWallets, setIsDetectingWallets] = useState(true);
   const [walletService, setWalletService] = useState<WalletService | null>(null);
   
-  // Username login state
-  const [loginMethod, setLoginMethod] = useState<'wallet' | 'username'>('wallet');
-  const [username, setUsername] = useState<string>('');
+  // Username login state - COMMENTED OUT
+  // const [loginMethod, setLoginMethod] = useState<'wallet' | 'username'>('wallet');
+  // const [username, setUsername] = useState<string>('');
 
   // Function to get display name for wallet
   const getWalletDisplayName = (walletName: string): string => {
@@ -134,51 +134,52 @@ export default function LoginForm({ onLoginSuccess, onLoginError }: WalletLoginF
   };
 
   const handleLogin = async () => {
-    if (loginMethod === 'username') {
-      if (!username.trim()) {
-        onLoginError('Please enter a username');
-        return;
-      }
+    // USERNAME LOGIN LOGIC - COMMENTED OUT
+    // if (loginMethod === 'username') {
+    //   if (!username.trim()) {
+    //     onLoginError('Please enter a username');
+    //     return;
+    //   }
 
-      setIsLoading(true);
+    //   setIsLoading(true);
 
-      try {
-        // For username login, we just use the username as the user identifier
-        const normalizedUsername = username.trim().toLowerCase();
+    //   try {
+    //     // For username login, we just use the username as the user identifier
+    //     const normalizedUsername = username.trim().toLowerCase();
         
-        // Initialize user in database
-        const initResponse = await fetch('/api/init-user', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: normalizedUsername,
-          }),
-        });
+    //     // Initialize user in database
+    //     const initResponse = await fetch('/api/init-user', {
+    //       method: 'POST',
+    //       headers: {
+    //         'Content-Type': 'application/json',
+    //       },
+    //       body: JSON.stringify({
+    //         username: normalizedUsername,
+    //       }),
+    //     });
 
-        if (!initResponse.ok) {
-          const errorData = await initResponse.json();
-          throw new Error(errorData.error || 'Failed to initialize user');
-        }
+    //     if (!initResponse.ok) {
+    //       const errorData = await initResponse.json();
+    //       throw new Error(errorData.error || 'Failed to initialize user');
+    //     }
 
-        // Save auth data locally
-        AuthService.saveAuthData({
-          address: normalizedUsername,
-          wallet: 'username',
-          signature: '',
-          timestamp: Date.now(),
-        });
+    //     // Save auth data locally
+    //     AuthService.saveAuthData({
+    //       address: normalizedUsername,
+    //       wallet: 'username',
+    //       signature: '',
+    //       timestamp: Date.now(),
+    //     });
 
-        onLoginSuccess({ address: normalizedUsername, wallet: 'username' });
-      } catch (error) {
-        console.error('Username login error:', error);
-        onLoginError(error instanceof Error ? error.message : 'Login failed');
-      } finally {
-        setIsLoading(false);
-      }
-      return;
-    }
+    //     onLoginSuccess({ address: normalizedUsername, wallet: 'username' });
+    //   } catch (error) {
+    //     console.error('Username login error:', error);
+    //     onLoginError(error instanceof Error ? error.message : 'Login failed');
+    //   } finally {
+    //     setIsLoading(false);
+    //   }
+    //   return;
+    // }
 
     if (!walletService || !selectedWallet || !selectedAddress) {
       onLoginError('Please select a wallet and address');
@@ -246,8 +247,8 @@ export default function LoginForm({ onLoginSuccess, onLoginError }: WalletLoginF
             <p className="text-gray-600 mt-2">The Ultimate AI Hub for Polkassembly</p>
           </div>
 
-          {/* Login Method Toggle */}
-          <div className="mb-6">
+          {/* Login Method Toggle - COMMENTED OUT */}
+          {/* <div className="mb-6">
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
                 type="button"
@@ -272,57 +273,57 @@ export default function LoginForm({ onLoginSuccess, onLoginError }: WalletLoginF
                 Username
               </button>
             </div>
+          </div> */}
+
+          {/* WALLET LOGIN - Always show wallet login now */}
+          <div className="mb-4 flex flex-col gap-2 items-center">
+            <label className="block text-sm font-medium text-gray-700">
+              Select Wallet
+            </label>
+            {isDetectingWallets ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto mb-2"></div>
+                <p className="text-sm text-gray-600">Detecting wallets...</p>
+              </div>
+            ) : availableWallets.length > 0 ? (
+              <div className="flex items-center gap-2">
+                {availableWallets.map((wallet: string) => (
+                  <WalletButton
+                    key={wallet}
+                    disabled={isLoading}
+                    wallet={wallet as unknown as EWallet}
+                    onClick={handleWalletSelect}
+                    label={getWalletDisplayName(wallet)}
+                    selectedWallet={selectedWallet}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-gray-600 mb-2">No supported wallets found</p>
+                <p className="text-xs text-gray-500">
+                  Please install one of our supported wallets: Polkadot.js, SubWallet, or Talisman
+                </p>
+              </div>
+            )}
           </div>
+          
+          {/* USERNAME LOGIN - COMMENTED OUT */}
+          {/* <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Enter Username
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
+              className="w-full px-3 py-2 border text-gray-700 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isLoading}
+            />
+          </div> */}
 
-          {loginMethod === 'wallet' ? (
-            <div className="mb-4 flex flex-col gap-2 items-center">
-              <label className="block text-sm font-medium text-gray-700">
-                Select Wallet
-              </label>
-              {isDetectingWallets ? (
-                <div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto mb-2"></div>
-                  <p className="text-sm text-gray-600">Detecting wallets...</p>
-                </div>
-              ) : availableWallets.length > 0 ? (
-                <div className="flex items-center gap-2">
-                  {availableWallets.map((wallet: string) => (
-                    <WalletButton
-                      key={wallet}
-                      disabled={isLoading}
-                      wallet={wallet as unknown as EWallet}
-                      onClick={handleWalletSelect}
-                      label={getWalletDisplayName(wallet)}
-                      selectedWallet={selectedWallet}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-sm text-gray-600 mb-2">No supported wallets found</p>
-                  <p className="text-xs text-gray-500">
-                    Please install one of our supported wallets: Polkadot.js, SubWallet, or Talisman
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Enter Username
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                className="w-full px-3 py-2 border text-gray-700 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={isLoading}
-              />
-            </div>
-          )}
-
-        {loginMethod === 'wallet' && accounts.length > 0 && (
+        {accounts.length > 0 && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Choose Account
@@ -338,10 +339,10 @@ export default function LoginForm({ onLoginSuccess, onLoginError }: WalletLoginF
 
         <button
           onClick={handleLogin}
-          disabled={(loginMethod === 'wallet' && !selectedAddress) || (loginMethod === 'username' && !username.trim()) || isLoading}
+          disabled={!selectedAddress || isLoading}
           className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed mt-4"
         >
-          {isLoading ? 'Connecting...' : loginMethod === 'wallet' ? 'Connect Wallet' : 'Login with Username'}
+          {isLoading ? 'Connecting...' : 'Connect Wallet'}
         </button>
 
         {/* Decorative elements */}
