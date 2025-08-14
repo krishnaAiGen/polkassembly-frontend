@@ -1,7 +1,7 @@
 'use client'
 
 import { Message } from '@/types/chat';
-import React from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Tooltip } from 'react-tooltip';
@@ -19,6 +19,10 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
   const validSources = (message.sources || []).filter(s => s.url && s.url.trim() !== '')
   const hasLinks = validSources.length > 0
   const hasFollowUps = message.followUpQuestions && message.followUpQuestions.length > 0
+  
+  // Like/Dislike state
+  const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null)
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false)
   
   // Check if currentUser is a wallet address or username
   const isWalletAddress = currentUser && (currentUser.length > 20 || currentUser.includes('0x') || currentUser.includes('1') || currentUser.includes('2') || currentUser.includes('3') || currentUser.includes('4') || currentUser.includes('5') || currentUser.includes('6') || currentUser.includes('7') || currentUser.includes('8') || currentUser.includes('9'))
@@ -45,6 +49,16 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
       default:
         return '🔗'
     }
+  }
+
+  const handleLike = () => {
+    setFeedback('like')
+    setShowFeedbackForm(false)
+  }
+
+  const handleDislike = () => {
+    setFeedback('dislike')
+    setShowFeedbackForm(true)
   }
 
   if (hasLinks && !isUser) {
@@ -182,6 +196,66 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Like/Dislike Buttons - Only for AI responses */}
+          {!isUser && !isStreaming && (
+            <div className="mt-3 pt-3 border-t border-primary-100">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-gray-600">Was this helpful?</p>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleLike}
+                    className={`p-2 rounded-full transition-all duration-200 ${
+                      feedback === 'like'
+                        ? 'bg-green-100 text-green-600'
+                        : 'bg-gray-100 hover:bg-green-50 text-gray-500 hover:text-green-600'
+                    }`}
+                    title="Like this response"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={handleDislike}
+                    className={`p-2 rounded-full transition-all duration-200 ${
+                      feedback === 'dislike'
+                        ? 'bg-red-100 text-red-600'
+                        : 'bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-600'
+                    }`}
+                    title="Dislike this response"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.106-1.79l-.05-.025A4 4 0 0011.057 2H5.64a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.866a4 4 0 00.8-2.4z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Feedback Form - Show when disliked */}
+          {showFeedbackForm && feedback === 'dislike' && (
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm font-medium text-red-800 mb-2">
+                Since you have disliked it, please provide a review here
+              </p>
+              <a
+                href="https://form.typeform.com/to/NXegXtAO"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Provide Feedback
+                <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
             </div>
           )}
         </div>
