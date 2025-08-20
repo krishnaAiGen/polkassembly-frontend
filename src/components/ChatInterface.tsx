@@ -6,15 +6,15 @@ import MessageBubble from './MessageBubble'
 import Mascot from './Mascot';
 import AddressInline from './AddressInline';
 import React from 'react';
-
 interface ChatInterfaceProps {
   currentUser: string
   messages: Message[]
+  conversationId: string | null
   onNewMessage: (message: Message) => void
   onLogout: () => void
 }
 
-export default function ChatInterface({ currentUser, messages, onNewMessage, onLogout }: ChatInterfaceProps) {
+export default function ChatInterface({ currentUser, messages, conversationId, onNewMessage, onLogout }: ChatInterfaceProps) {
   const [inputText, setInputText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [streamingMessage, setStreamingMessage] = useState<Message | null>(null)
@@ -214,13 +214,14 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
 
     try {
       console.log('Starting fetch request to backend...')
-      // Send message to API with normalized username
+      // Send message to API with normalized username and conversationId
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage.text,
           username: currentUser, // currentUser is already normalized
+          conversationId: conversationId,
           history: messages
         }),
         signal: controller.signal
@@ -354,9 +355,9 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
   }
 
   return (
-    <div className="max-w-4xl mx-auto h-full flex flex-col">
+    <div className="h-full flex flex-col w-full">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-t-2xl shadow-lg p-4 border-b border-primary-200">
+      <div className="bg-white shadow-lg p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-pink-500 rounded-full flex items-center justify-center">
@@ -412,7 +413,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
       {/* Messages */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 bg-white/60 backdrop-blur-sm p-4 overflow-y-auto chat-scroll"
+        className="flex-1 bg-gray-50 p-4 overflow-y-auto chat-scroll"
       >
         <div className="space-y-4">
           {renderedMessages}
@@ -433,7 +434,7 @@ export default function ChatInterface({ currentUser, messages, onNewMessage, onL
       </div>
 
       {/* Input */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-b-2xl shadow-lg p-4 border-t border-primary-200">
+      <div className="bg-white shadow-lg p-4 border-t border-gray-200">
         <form onSubmit={handleSubmit} className="flex space-x-3">
           <input
             ref={inputRef}

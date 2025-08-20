@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { initializeDatabase, saveUserMessage } from '@/lib/database'
+import { initializeDatabase, saveUserMessage, saveMessageToConversation, createConversation } from '@/lib/database'
 import { Message, BackendApiResponse } from '@/types/chat'
 
 // Function to create streaming response
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
     // Ensure database exists
     await initializeDatabase()
     
-    const { message, username, history } = await request.json()
+    const { message, username, conversationId, history } = await request.json()
     
     if (!message || !username) {
       return NextResponse.json(
@@ -179,6 +179,13 @@ export async function POST(request: NextRequest) {
 
     // Normalize username to lowercase
     const normalizedUsername = username.trim().toLowerCase()
+    
+    // If no conversationId provided, create a new conversation
+    let activeConversationId = conversationId
+    if (!activeConversationId) {
+      activeConversationId = await createConversation(normalizedUsername)
+      console.log(`Created new conversation: ${activeConversationId}`)
+    }
 
     // Get client IP for backend tracking
     let clientIP = request.headers.get('x-forwarded-for') || 
@@ -204,7 +211,7 @@ export async function POST(request: NextRequest) {
       timestamp: Date.now()
     }
     
-    await saveUserMessage(normalizedUsername, userMessage)
+    await saveMessageToConversation(activeConversationId, userMessage)
 
     // Get AI response from external API
     const { text: aiResponseText, sources, followUpQuestions, remainingRequests } = await callExternalAPI(message, normalizedUsername, clientIP)
@@ -251,7 +258,7 @@ export async function POST(request: NextRequest) {
       followUpQuestions: filteredFollowUpQuestions // Use filtered follow-up questions
     }
     
-    await saveUserMessage(normalizedUsername, aiMessage)
+    await saveMessageToConversation(activeConversationId, aiMessage)
 
     // Return streaming response
     return createStreamResponse(finalResponseText, sources, filteredFollowUpQuestions) // Pass filtered follow-up questions

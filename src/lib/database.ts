@@ -7,6 +7,8 @@ import {
   query, 
   orderBy, 
   getDocs,
+  deleteDoc,
+  limit,
   Timestamp 
 } from 'firebase/firestore'
 import { db } from './firebase'
@@ -263,5 +265,174 @@ export function getCacheStats() {
     inMemoryUsers: Array.from(chatCache.keys()),
     cacheSize: chatCache.size,
     timestamps: Object.fromEntries(cacheTimestamps.entries())
+  }
+}
+
+/**
+ * Create a new conversation for a user
+ */
+export async function createConversation(userId: string, title?: string): Promise<string> {
+  try {
+    const normalizedUserId = userId.toLowerCase()
+    const conversationId = `conv_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
+    
+    const conversationData = {
+      id: conversationId,
+      title: title || 'New Conversation',
+      createdAt: Timestamp.now(),
+      lastActivity: Timestamp.now(),
+      messageCount: 0,
+      lastMessage: '',
+      userId: normalizedUserId
+    }
+
+    // Save conversation metadata
+    const conversationRef = doc(db, 'conversations', conversationId)
+    await setDoc(conversationRef, conversationData)
+
+    console.log(`Created conversation ${conversationId} for user: ${normalizedUserId}`)
+    return conversationId
+  } catch (error) {
+    console.error('Error creating conversation:', error)
+    throw error
+  }
+}
+
+/**
+ * Get all conversations for a user
+ */
+export async function getUserConversations(userId: string): Promise<any[]> {
+  try {
+    const normalizedUserId = userId.toLowerCase()
+    
+    const conversationsRef = collection(db, 'conversations')
+    const q = query(
+      conversationsRef,
+      orderBy('lastActivity', 'desc')
+    )
+    
+    const querySnapshot = await getDocs(q)
+    const conversations: any[] = []
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data()
+      if (data.userId === normalizedUserId) {
+        conversations.push({
+          id: data.id,
+          title: data.title,
+          lastMessage: data.lastMessage || 'No messages yet',
+          lastActivity: data.lastActivity.toMillis(),
+          messageCount: data.messageCount || 0
+        })
+      }
+    })
+    
+    return conversations
+  } catch (error) {
+    console.error('Error getting user conversations:', error)
+    return []
+  }
+}
+
+/**
+ * Update conversation metadata
+ */
+export async function updateConversation(conversationId: string, updates: any): Promise<void> {
+  try {
+    const conversationRef = doc(db, 'conversations', conversationId)
+    await setDoc(conversationRef, {
+      ...updates,
+      lastActivity: Timestamp.now()
+    }, { merge: true })
+  } catch (error) {
+    console.error('Error updating conversation:', error)
+    throw error
+  }
+}
+
+/**
+ * Delete a conversation and all its messages
+ */
+export async function deleteConversation(userId: string, conversationId: string): Promise<void> {
+  try {
+    const normalizedUserId = userId.toLowerCase()
+    
+    // Delete conversation metadata
+    const conversationRef = doc(db, 'conversations', conversationId)
+    await deleteDoc(conversationRef)
+    
+    // Delete all messages in the conversation
+    const messagesRef = collection(db, 'conversations', conversationId, 'messages')
+    const messagesSnapshot = await getDocs(messagesRef)
+    
+    const deletePromises = messagesSnapshot.docs.map(doc => deleteDoc(doc.ref))
+    await Promise.all(deletePromises)
+    
+    console.log(`Deleted conversation ${conversationId} for user: ${normalizedUserId}`)
+  } catch (error) {
+    console.error('Error deleting conversation:', error)
+    throw error
+  }
+}
+
+/**
+ * Save a message to a specific conversation
+ */
+export async function saveMessageToConversation(conversationId: string, message: Message): Promise<void> {
+  try {
+    // Save message to conversation
+    const messagesRef = collection(db, 'conversations', conversationId, 'messages')
+    await addDoc(messagesRef, {
+      ...message,
+      timestamp: Timestamp.fromMillis(message.timestamp)
+    })
+
+    // Update conversation metadata
+    const conversationRef = doc(db, 'conversations', conversationId)
+    const conversationDoc = await getDoc(conversationRef)
+    
+    if (conversationDoc.exists()) {
+      const currentData = conversationDoc.data()
+      await setDoc(conversationRef, {
+        ...currentData,
+        lastActivity: Timestamp.now(),
+        lastMessage: message.text.substring(0, 100),
+        messageCount: (currentData.messageCount || 0) + 1,
+        // Update title based on first user message if it's still "New Conversation"
+        title: currentData.title === 'New Conversation' && message.sender === 'user' 
+          ? message.text.substring(0, 50) + (message.text.length > 50 ? '...' : '')
+          : currentData.title
+      }, { merge: true })
+    }
+
+    console.log(`Message saved to conversation: ${conversationId}`)
+  } catch (error) {
+    console.error('Error saving message to conversation:', error)
+    throw error
+  }
+}
+
+/**
+ * Get messages from a specific conversation
+ */
+export async function getConversationMessages(conversationId: string): Promise<Message[]> {
+  try {
+    const messagesRef = collection(db, 'conversations', conversationId, 'messages')
+    const q = query(messagesRef, orderBy('timestamp', 'asc'))
+    const querySnapshot = await getDocs(q)
+    
+    const messages: Message[] = []
+    querySnapshot.forEach((doc) => {
+      const data = doc.data()
+      messages.push({
+        ...data,
+        timestamp: data.timestamp.toMillis(),
+      } as Message)
+    })
+    
+    return messages
+  } catch (error) {
+    console.error('Error getting conversation messages:', error)
+    return []
   }
 } 
