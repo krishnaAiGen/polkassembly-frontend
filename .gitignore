@@ -23,6 +23,14 @@ chat-database.json
 *.db
 *.sqlite
 
+# Firebase service account keys (if using JSON files)
+firebase-service-account.json
+*service-account*.json
+
+# Export files
+conversations-export-*.json
+conversations-export-*.csv
+
 # Logs
 logs
 *.log

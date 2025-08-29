@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "export-conversations": "node scripts/export-conversations.js",
+    "analyze-conversations": "node scripts/analyze-conversations.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
@@ -22,7 +24,9 @@
     "@types/react-dom": "^18.0.0",
     "autoprefixer": "^10.4.16",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.1",
     "firebase": "^11.10.0",
+    "firebase-admin": "^13.4.0",
     "jsonwebtoken": "^9.0.2",
     "next": "14.0.0",
     "postcss": "^8.4.31",
