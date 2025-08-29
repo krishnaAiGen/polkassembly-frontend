@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { initializeDatabase, saveUserMessage, saveMessageToConversation, createConversation } from '@/lib/database'
-import { Message, BackendApiResponse } from '@/types/chat'
+import { initializeDatabase, saveUserMessage, saveMessageToConversation, createConversation, getConversationMessages } from '@/lib/database'
+import { Message, BackendApiResponse, ConversationTurn } from '@/types/chat'
 
 // Function to create streaming response
 function createStreamResponse(text: string, sources?: any[], followUpQuestions?: string[]) {
@@ -48,8 +48,31 @@ function createStreamResponse(text: string, sources?: any[], followUpQuestions?:
   })
 }
 
+// Function to extract conversation history from messages
+function extractConversationHistory(messages: Message[], limit: number): ConversationTurn[] {
+  const history: ConversationTurn[] = []
+  let currentQuery: string | null = null
+  
+  // Process messages in chronological order
+  for (const message of messages) {
+    if (message.sender === 'user') {
+      currentQuery = message.text
+    } else if (message.sender === 'ai' && currentQuery) {
+      history.push({
+        query: currentQuery,
+        response: message.text,
+        timestamp: new Date(message.timestamp).toISOString()
+      })
+      currentQuery = null
+    }
+  }
+  
+  // Return the last N conversation turns (most recent)
+  return history.slice(-limit)
+}
+
 // Function to call external API
-async function callExternalAPI(message: string, userId: string, clientIP: string): Promise<{ text: string, sources?: any[], followUpQuestions?: string[], remainingRequests?: number }> {
+async function callExternalAPI(message: string, userId: string, clientIP: string, conversationHistory?: ConversationTurn[]): Promise<{ text: string, sources?: any[], followUpQuestions?: string[], remainingRequests?: number }> {
   const apiUrl = process.env.API_BASE_URL
   
   if (!apiUrl || apiUrl === 'https://api.example.com') {
@@ -100,12 +123,13 @@ async function callExternalAPI(message: string, userId: string, clientIP: string
     // Call your configured API
     // Request body matching backend API specification
     const requestBody = {
-      question: message,           // Required: 1-500 characters
-      user_id: userId,            // Required: 1-100 characters
-      client_ip: clientIP,        // Required: 7-45 characters
-      max_chunks: 5,              // Optional: 1-10, default: 5
-      include_sources: true,      // Optional: default: true
-      custom_prompt: undefined    // Optional: custom system prompt
+      question: message,                    // Required: 1-500 characters
+      user_id: userId,                     // Required: 1-100 characters
+      client_ip: clientIP,                 // Required: 7-45 characters
+      max_chunks: 5,                       // Optional: 1-10, default: 5
+      include_sources: true,               // Optional: default: true
+      custom_prompt: undefined,            // Optional: custom system prompt
+      conversation_history: conversationHistory || [] // Optional: previous Q&A pairs for context
     }
     
     console.log('Sending request to backend:', JSON.stringify(requestBody, null, 2))
@@ -213,8 +237,18 @@ export async function POST(request: NextRequest) {
     
     await saveMessageToConversation(activeConversationId, userMessage)
 
-    // Get AI response from external API
-    const { text: aiResponseText, sources, followUpQuestions, remainingRequests } = await callExternalAPI(message, normalizedUsername, clientIP)
+    // Get conversation history for context (configurable number of Q&A pairs)
+    const historyLimit = parseInt(process.env.CONVERSATION_HISTORY_LIMIT || '5')
+    const conversationMessages = await getConversationMessages(activeConversationId)
+    const conversationHistory = extractConversationHistory(conversationMessages, historyLimit)
+    
+    console.log(`Conversation history: ${conversationHistory.length}/${historyLimit} previous Q&A pairs`)
+    if (conversationHistory.length > 0) {
+      console.log('Most recent history:', conversationHistory.slice(-2)) // Log last 2 for debugging
+    }
+
+    // Get AI response from external API with conversation context
+    const { text: aiResponseText, sources, followUpQuestions, remainingRequests } = await callExternalAPI(message, normalizedUsername, clientIP, conversationHistory)
     
     // Check if the answer seems insufficient (short responses, apologetic responses, etc.)
     const isInsufficientAnswer = 

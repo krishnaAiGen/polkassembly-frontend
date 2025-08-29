@@ -17,6 +17,12 @@ export interface Message {
 
 
 
+export interface ConversationTurn {
+  query: string             // User's question
+  response: string          // AI's response
+  timestamp?: string        // Optional timestamp
+}
+
 export interface BackendApiRequest {
   question: string           // Required: 1-500 characters
   user_id: string           // Required: 1-100 characters  
@@ -24,6 +30,7 @@ export interface BackendApiRequest {
   max_chunks?: number       // Optional: 1-10, default: 5
   include_sources?: boolean // Optional: default: true
   custom_prompt?: string    // Optional: custom system prompt
+  conversation_history?: ConversationTurn[] // Optional: previous Q&A pairs for context
 }
 
 export interface BackendApiResponse {
