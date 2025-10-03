@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "export-conversations": "node scripts/export-conversations.js",
-    "analyze-conversations": "node scripts/analyze-conversations.js"
+    "analyze-conversations": "node scripts/analyze-conversations.js",
+    "test-auth": "node scripts/test-auth.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
@@ -20,6 +21,7 @@
     "@polkadot/util-crypto": "^13.0.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.0.0",
+    "@types/pg": "^8.15.5",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "autoprefixer": "^10.4.16",
@@ -29,6 +31,7 @@
     "firebase-admin": "^13.4.0",
     "jsonwebtoken": "^9.0.2",
     "next": "14.0.0",
+    "pg": "^8.16.3",
     "postcss": "^8.4.31",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",

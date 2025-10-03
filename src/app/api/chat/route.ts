@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initializeDatabase, saveUserMessage, saveMessageToConversation, createConversation, getConversationMessages } from '@/lib/database'
+import { ensureTableExists, logQueryResponse } from '@/lib/postgres'
 import { Message, BackendApiResponse, ConversationTurn } from '@/types/chat'
 
 // Function to create streaming response
@@ -74,6 +75,7 @@ function extractConversationHistory(messages: Message[], limit: number): Convers
 // Function to call external API
 async function callExternalAPI(message: string, userId: string, clientIP: string, conversationHistory?: ConversationTurn[]): Promise<{ text: string, sources?: any[], followUpQuestions?: string[], remainingRequests?: number }> {
   const apiUrl = process.env.API_BASE_URL
+  const apiToken = process.env.POLKASSEMBLY_AI_TOKEN
   
   if (!apiUrl || apiUrl === 'https://api.example.com') {
     // Fallback response when no real API is configured
@@ -119,6 +121,17 @@ async function callExternalAPI(message: string, userId: string, clientIP: string
     }
   }
 
+  // Check if authentication token is configured
+  if (!apiToken) {
+    console.error('POLKASSEMBLY_AI_TOKEN is not configured in environment variables')
+    return { 
+      text: "Authentication token is not configured. Please check your environment variables.",
+      sources: [],
+      followUpQuestions: [],
+      remainingRequests: 0
+    }
+  }
+
   try {
     // Call your configured API
     // Request body matching backend API specification
@@ -137,8 +150,8 @@ async function callExternalAPI(message: string, userId: string, clientIP: string
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        // Add any required headers for your API
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(requestBody)
     })
@@ -188,11 +201,22 @@ async function callExternalAPI(message: string, userId: string, clientIP: string
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now() // Track response time for logging
+  let requestBody: any = {}
+  
   try {
     // Ensure database exists
     await initializeDatabase()
     
-    const { message, username, conversationId, history } = await request.json()
+    // Ensure PostgreSQL table exists (optional - don't fail if unavailable)
+    try {
+      await ensureTableExists()
+    } catch (pgError) {
+      console.warn('PostgreSQL not available, continuing without logging:', pgError instanceof Error ? pgError.message : 'Unknown error')
+    }
+    
+    requestBody = await request.json()
+    const { message, username, conversationId, history } = requestBody
     
     if (!message || !username) {
       return NextResponse.json(
@@ -294,11 +318,40 @@ export async function POST(request: NextRequest) {
     
     await saveMessageToConversation(activeConversationId, aiMessage)
 
+    // Log query-response pair to PostgreSQL
+    const responseTime = Date.now() - startTime
+    await logQueryResponse({
+      query: message,
+      response: finalResponseText,
+      status: 'success',
+      userId: normalizedUsername,
+      conversationId: activeConversationId,
+      responseTimeMs: responseTime
+    })
+
     // Return streaming response
     return createStreamResponse(finalResponseText, sources, filteredFollowUpQuestions) // Pass filtered follow-up questions
     
   } catch (error) {
     console.error('Chat API error:', error)
+    
+    // Log error to PostgreSQL if we have the query
+    try {
+      if (requestBody.message && requestBody.username) {
+        const responseTime = Date.now() - startTime
+        await logQueryResponse({
+          query: requestBody.message,
+          response: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          status: 'error',
+          userId: requestBody.username?.trim()?.toLowerCase(),
+          conversationId: requestBody.conversationId || null,
+          responseTimeMs: responseTime
+        })
+      }
+    } catch (logError) {
+      console.error('Failed to log error to PostgreSQL:', logError)
+    }
+    
     return NextResponse.json(
       { success: false, error: 'Failed to process chat message' },
       { status: 500 }
