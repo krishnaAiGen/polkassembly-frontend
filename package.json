@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "export-conversations": "node scripts/export-conversations.js",
-    "analyze-conversations": "node scripts/analyze-conversations.js"
+    "analyze-conversations": "node scripts/analyze-conversations.js",
+    "test-auth": "node scripts/test-auth.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",

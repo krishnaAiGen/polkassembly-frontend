@@ -75,6 +75,7 @@ function extractConversationHistory(messages: Message[], limit: number): Convers
 // Function to call external API
 async function callExternalAPI(message: string, userId: string, clientIP: string, conversationHistory?: ConversationTurn[]): Promise<{ text: string, sources?: any[], followUpQuestions?: string[], remainingRequests?: number }> {
   const apiUrl = process.env.API_BASE_URL
+  const apiToken = process.env.POLKASSEMBLY_AI_TOKEN
   
   if (!apiUrl || apiUrl === 'https://api.example.com') {
     // Fallback response when no real API is configured
@@ -120,6 +121,17 @@ async function callExternalAPI(message: string, userId: string, clientIP: string
     }
   }
 
+  // Check if authentication token is configured
+  if (!apiToken) {
+    console.error('POLKASSEMBLY_AI_TOKEN is not configured in environment variables')
+    return { 
+      text: "Authentication token is not configured. Please check your environment variables.",
+      sources: [],
+      followUpQuestions: [],
+      remainingRequests: 0
+    }
+  }
+
   try {
     // Call your configured API
     // Request body matching backend API specification
@@ -138,8 +150,8 @@ async function callExternalAPI(message: string, userId: string, clientIP: string
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        // Add any required headers for your API
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(requestBody)
     })
@@ -200,7 +212,7 @@ export async function POST(request: NextRequest) {
     try {
       await ensureTableExists()
     } catch (pgError) {
-      console.warn('PostgreSQL not available, continuing without logging:', pgError.message)
+      console.warn('PostgreSQL not available, continuing without logging:', pgError instanceof Error ? pgError.message : 'Unknown error')
     }
     
     requestBody = await request.json()
