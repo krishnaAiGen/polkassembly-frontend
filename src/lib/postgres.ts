@@ -13,8 +13,7 @@ function getPool(): Pool {
       user: process.env.POSTGRES_USER || 'postgres',
       password: process.env.POSTGRES_PASSWORD || '',
       ssl: process.env.POSTGRES_SSL === 'false' ? false : { 
-        rejectUnauthorized: false,
-        require: true
+        rejectUnauthorized: false
       },
       max: 20, // Maximum number of clients in the pool
       idleTimeoutMillis: 30000, // Close idle clients after 30 seconds

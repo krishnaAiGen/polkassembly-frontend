@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
         postgresStatus = 'connected'
       }
     } catch (pgError) {
-      console.warn('PostgreSQL health check failed:', pgError.message)
+      console.warn('PostgreSQL health check failed:', pgError instanceof Error ? pgError.message : 'Unknown error')
       postgresStatus = 'failed'
     }
     
@@ -54,8 +54,9 @@ export async function GET(request: NextRequest) {
           apiStatus = `failed (${response.status})`
         }
       } catch (apiError) {
-        console.warn('External API health check error:', apiError.message)
-        apiStatus = `error (${apiError.message})`
+        const errorMessage = apiError instanceof Error ? apiError.message : 'Unknown error'
+        console.warn('External API health check error:', errorMessage)
+        apiStatus = `error (${errorMessage})`
       }
     } else if (!apiToken) {
       apiStatus = 'missing_token'
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({
       status: 'unhealthy',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString()
     }, { status: 500 })
   }
