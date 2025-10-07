@@ -394,20 +394,25 @@ export default function ChatInterface({ currentUser, messages, conversationId, o
         </div>
       </div>
 
-      {/* Beta Feedback Notice */}
-      <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white px-4 py-2 text-center shadow-md">
-        <p className="text-sm font-medium">
-          🚀 This is the beta version of Klara for testing. Please share any feedback or issues you encounter{' '}
-          <a 
-            href="https://form.typeform.com/to/NXegXtAO" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-white underline hover:text-yellow-100 font-bold"
-          >
-            here
-          </a>
-          ! 📝
-        </p>
+      {/* Beta Feedback Notice & Privacy Notice */}
+      <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white px-4 py-3 text-center shadow-md">
+        <div className="space-y-2">
+          <p className="text-sm font-medium">
+            🚀 This is the beta version of Klara for testing. Please share any feedback or issues you encounter{' '}
+            <a 
+              href="https://form.typeform.com/to/NXegXtAO" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-white underline hover:text-yellow-100 font-bold"
+            >
+              here
+            </a>
+            ! 📝
+          </p>
+          <p className="text-xs opacity-90">
+            <strong>Privacy Notice:</strong> Chat conversations are monitored and analyzed to improve Klara's responses and user experience. No personal data is shared with third parties.
+          </p>
+        </div>
       </div>
 
       {/* Messages */}
