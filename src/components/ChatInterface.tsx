@@ -157,9 +157,10 @@ export default function ChatInterface({ currentUser, messages, conversationId, o
         message={message} 
         onFollowUpClick={handleFollowUpClick}
         currentUser={currentUser}
+        conversationId={conversationId || undefined}
       />
     ));
-  }, [messages, currentUser]);
+  }, [messages, currentUser, conversationId]);
 
   const renderedStreamingMessage = React.useMemo(() => {
     if (!streamingMessage) return null;
@@ -171,6 +172,7 @@ export default function ChatInterface({ currentUser, messages, conversationId, o
             isStreaming={true} 
             onFollowUpClick={handleFollowUpClick}
             currentUser={currentUser}
+            conversationId={conversationId || undefined}
           />
           {/* Stop button positioned at the bottom of the streaming message */}
           <div className="flex justify-start mt-2">
@@ -185,7 +187,7 @@ export default function ChatInterface({ currentUser, messages, conversationId, o
         </div>
       </div>
     );
-  }, [streamingMessage, handleStopGeneration]);
+  }, [streamingMessage, handleStopGeneration, conversationId]);
 
   const submitMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return
@@ -385,29 +387,45 @@ export default function ChatInterface({ currentUser, messages, conversationId, o
               </p>
             </div>
           </div>
-          <button
-            onClick={onLogout}
-            className="text-gray-500 hover:text-red-500 transition-colors px-3 py-1 rounded-lg hover:bg-red-50"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            <a
+              href="/guide"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-500 hover:text-blue-500 transition-colors px-3 py-1 rounded-lg hover:bg-blue-50 flex items-center gap-1"
+            >
+              <span>📖</span>
+              <span>Usage Guide</span>
+            </a>
+            <button
+              onClick={onLogout}
+              className="text-gray-500 hover:text-red-500 transition-colors px-3 py-1 rounded-lg hover:bg-red-50"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Beta Feedback Notice */}
-      <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white px-4 py-2 text-center shadow-md">
-        <p className="text-sm font-medium">
-          🚀 This is the beta version of Klara for testing. Please share any feedback or issues you encounter{' '}
-          <a 
-            href="https://form.typeform.com/to/NXegXtAO" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-white underline hover:text-yellow-100 font-bold"
-          >
-            here
-          </a>
-          ! 📝
-        </p>
+      {/* Beta Feedback Notice & Privacy Notice */}
+      <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white px-4 py-3 text-center shadow-md">
+        <div className="space-y-2">
+          <p className="text-sm font-medium">
+            🚀 This is the beta version of Klara for testing. Please share any feedback or issues you encounter{' '}
+            <a 
+              href="/feedback" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-white underline hover:text-yellow-100 font-bold"
+            >
+              here
+            </a>
+            ! 📝
+          </p>
+          <p className="text-xs opacity-90">
+            <strong>Privacy Notice:</strong> Chat conversations are monitored and analyzed to improve Klara's responses and user experience. No personal data is shared with third parties.
+          </p>
+        </div>
       </div>
 
       {/* Messages */}
