@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { initializeDatabase, saveUserMessage, saveMessageToConversation, createConversation, getConversationMessages } from '@/lib/database'
+import { initializeDatabase, saveMessageToConversation, createConversation, getConversationMessages } from '@/lib/database'
 import { ensureTableExists, logQueryResponse } from '@/lib/postgres'
 import { Message, BackendApiResponse, ConversationTurn } from '@/types/chat'
 
