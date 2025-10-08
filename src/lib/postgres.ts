@@ -29,6 +29,12 @@ function getTableName(): string {
   return env === 'production' ? 'klara_qa_prod' : 'klara_qa_dev'
 }
 
+// Get feedback table name based on environment
+function getFeedbackTableName(): string {
+  const env = process.env.NODE_ENV || 'development'
+  return env === 'production' ? 'klara_feedback_prod' : 'klara_feedback_dev'
+}
+
 // Check if table exists and create if it doesn't
 export async function ensureTableExists(): Promise<void> {
   // Skip if PostgreSQL is disabled
@@ -101,6 +107,82 @@ export async function ensureTableExists(): Promise<void> {
   }
 }
 
+// Create feedback table if it doesn't exist
+export async function ensureFeedbackTableExists(): Promise<void> {
+  // Skip if PostgreSQL is disabled
+  if (process.env.DISABLE_POSTGRES === 'true') {
+    console.log('PostgreSQL feedback table creation disabled via DISABLE_POSTGRES=true')
+    return
+  }
+  
+  const pool = getPool()
+  const tableName = getFeedbackTableName()
+  
+  try {
+    const client = await pool.connect()
+    
+    try {
+      // Check if table exists
+      const tableExistsQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = $1
+        );
+      `
+      
+      const result = await client.query(tableExistsQuery, [tableName])
+      const tableExists = result.rows[0].exists
+      
+      if (!tableExists) {
+        console.log(`Creating table: ${tableName}`)
+        
+        const createTableQuery = `
+          CREATE TABLE ${tableName} (
+            id SERIAL PRIMARY KEY,
+            first_name VARCHAR(100) NOT NULL,
+            last_name VARCHAR(100) NOT NULL,
+            email VARCHAR(255) NOT NULL,
+            company VARCHAR(255),
+            feedback_text TEXT,
+            user_id VARCHAR(100),
+            conversation_id VARCHAR(100),
+            message_id VARCHAR(100),
+            rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+            timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+        `
+        
+        await client.query(createTableQuery)
+        
+        // Create indexes for better performance
+        const createIndexes = [
+          `CREATE INDEX idx_${tableName}_timestamp ON ${tableName} (timestamp);`,
+          `CREATE INDEX idx_${tableName}_email ON ${tableName} (email);`,
+          `CREATE INDEX idx_${tableName}_user_id ON ${tableName} (user_id);`,
+          `CREATE INDEX idx_${tableName}_conversation_id ON ${tableName} (conversation_id);`,
+          `CREATE INDEX idx_${tableName}_rating ON ${tableName} (rating);`
+        ]
+        
+        for (const indexQuery of createIndexes) {
+          await client.query(indexQuery)
+        }
+        
+        console.log(`Feedback table ${tableName} created successfully with indexes`)
+      } else {
+        console.log(`Feedback table ${tableName} already exists`)
+      }
+    } finally {
+      client.release()
+    }
+  } catch (error) {
+    console.error('Error ensuring feedback table exists:', error)
+    throw error
+  }
+}
+
 // Log query-response pair to PostgreSQL
 export async function logQueryResponse(data: {
   query: string
@@ -155,6 +237,63 @@ export async function logQueryResponse(data: {
     console.error('Error logging query-response to PostgreSQL:', error)
     // Don't throw error to avoid breaking the chat flow
     // Just log the error and continue
+  }
+}
+
+// Save feedback data to PostgreSQL
+export async function saveFeedback(data: {
+  firstName: string
+  lastName: string
+  email: string
+  company?: string
+  feedbackText?: string
+  userId?: string
+  conversationId?: string
+  messageId?: string
+  rating?: number
+}): Promise<void> {
+  if (process.env.DISABLE_POSTGRES === 'true') {
+    return
+  }
+  
+  const pool = getPool()
+  const tableName = getFeedbackTableName()
+  
+  try {
+    const client = await pool.connect()
+    
+    try {
+      const insertQuery = `
+        INSERT INTO ${tableName} (
+          first_name, last_name, email, company, feedback_text, 
+          user_id, conversation_id, message_id, rating, timestamp
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING id, timestamp;
+      `
+      
+      const values = [
+        data.firstName,
+        data.lastName,
+        data.email,
+        data.company || null,
+        data.feedbackText || null,
+        data.userId || null,
+        data.conversationId || null,
+        data.messageId || null,
+        data.rating || null,
+        new Date()
+      ]
+      
+      const result = await client.query(insertQuery, values)
+      const insertedRow = result.rows[0]
+      
+      console.log(`Feedback saved to ${tableName} - ID: ${insertedRow.id}, Timestamp: ${insertedRow.timestamp}`)
+    } finally {
+      client.release()
+    }
+  } catch (error) {
+    console.error('Error saving feedback to PostgreSQL:', error)
+    throw error // Throw error for feedback form to handle
   }
 }
 
