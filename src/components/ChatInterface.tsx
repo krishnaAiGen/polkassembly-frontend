@@ -149,21 +149,41 @@ export default function ChatInterface({ currentUser, messages, conversationId, o
     }
   };
 
+  // Helper function to find the corresponding user query for an AI response
+  const findCorrespondingQuery = (aiMessageIndex: number): string | undefined => {
+    // Look backwards from the AI message to find the most recent user message
+    for (let i = aiMessageIndex - 1; i >= 0; i--) {
+      if (messages[i].sender === 'user') {
+        return messages[i].text
+      }
+    }
+    return undefined
+  }
+
   // Memoize the messages rendering to prevent unnecessary re-renders
   const renderedMessages = React.useMemo(() => {
-    return messages.map((message) => (
-      <MessageBubble 
-        key={message.id} 
-        message={message} 
-        onFollowUpClick={handleFollowUpClick}
-        currentUser={currentUser}
-        conversationId={conversationId || undefined}
-      />
-    ));
+    return messages.map((message, index) => {
+      const queryText = message.sender === 'ai' ? findCorrespondingQuery(index) : undefined
+      
+      return (
+        <MessageBubble 
+          key={message.id} 
+          message={message} 
+          onFollowUpClick={handleFollowUpClick}
+          currentUser={currentUser}
+          conversationId={conversationId || undefined}
+          queryText={queryText}
+        />
+      )
+    });
   }, [messages, currentUser, conversationId]);
 
   const renderedStreamingMessage = React.useMemo(() => {
     if (!streamingMessage) return null;
+    
+    // Find the most recent user message for the streaming response
+    const streamingQueryText = findCorrespondingQuery(messages.length)
+    
     return (
       <div className="flex justify-start mb-4">
         <div className="max-w-[70%] order-1">
@@ -173,6 +193,7 @@ export default function ChatInterface({ currentUser, messages, conversationId, o
             onFollowUpClick={handleFollowUpClick}
             currentUser={currentUser}
             conversationId={conversationId || undefined}
+            queryText={streamingQueryText}
           />
           {/* Stop button positioned at the bottom of the streaming message */}
           <div className="flex justify-start mt-2">

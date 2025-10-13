@@ -149,6 +149,9 @@ export async function ensureFeedbackTableExists(): Promise<void> {
             conversation_id VARCHAR(100),
             message_id VARCHAR(100),
             rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+            feedback_type VARCHAR(50) DEFAULT 'form_submission',
+            query_text TEXT,
+            response_text TEXT,
             timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -251,6 +254,9 @@ export async function saveFeedback(data: {
   conversationId?: string
   messageId?: string
   rating?: number
+  feedbackType?: string
+  queryText?: string
+  responseText?: string
 }): Promise<void> {
   if (process.env.DISABLE_POSTGRES === 'true') {
     return
@@ -266,8 +272,9 @@ export async function saveFeedback(data: {
       const insertQuery = `
         INSERT INTO ${tableName} (
           first_name, last_name, email, company, feedback_text, 
-          user_id, conversation_id, message_id, rating, timestamp
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          user_id, conversation_id, message_id, rating, feedback_type, 
+          query_text, response_text, timestamp
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING id, timestamp;
       `
       
@@ -281,6 +288,9 @@ export async function saveFeedback(data: {
         data.conversationId || null,
         data.messageId || null,
         data.rating || null,
+        data.feedbackType || 'form_submission',
+        data.queryText || null,
+        data.responseText || null,
         new Date()
       ]
       

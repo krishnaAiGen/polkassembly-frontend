@@ -66,6 +66,9 @@ async function ensureFeedbackTableExists() {
             conversation_id VARCHAR(100),
             message_id VARCHAR(100),
             rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+            feedback_type VARCHAR(50) DEFAULT 'form_submission',
+            query_text TEXT,
+            response_text TEXT,
             timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

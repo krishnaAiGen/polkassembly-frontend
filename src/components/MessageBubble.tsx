@@ -13,9 +13,10 @@ interface MessageBubbleProps {
   onFollowUpClick?: (question: string) => void
   currentUser?: string
   conversationId?: string
+  queryText?: string
 }
 
-export default function MessageBubble({ message, isStreaming = false, onFollowUpClick, currentUser, conversationId }: MessageBubbleProps) {
+export default function MessageBubble({ message, isStreaming = false, onFollowUpClick, currentUser, conversationId, queryText }: MessageBubbleProps) {
   const isUser = message.sender === 'user'
   const validSources = (message.sources || []).filter(s => s.url && s.url.trim() !== '')
   const hasLinks = validSources.length > 0
@@ -55,17 +56,34 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
     setFeedback('like')
   }
 
-  const handleDislike = () => {
+  const handleDislike = async () => {
     setFeedback('dislike')
     
-    // Open feedback form in new tab
-    const feedbackUrl = new URL('/feedback', window.location.origin)
-    feedbackUrl.searchParams.set('dislike', 'true')
-    if (currentUser) feedbackUrl.searchParams.set('userId', currentUser)
-    if (conversationId) feedbackUrl.searchParams.set('conversationId', conversationId)
-    if (message.id) feedbackUrl.searchParams.set('messageId', message.id)
-    
-    window.open(feedbackUrl.toString(), '_blank')
+    // Record the dislike action in the database immediately
+    try {
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          firstName: 'Anonymous',
+          lastName: 'User',
+          email: 'anonymous@dislike.action',
+          feedbackText: 'User clicked dislike button',
+          userId: currentUser,
+          conversationId: conversationId,
+          messageId: message.id,
+          rating: 1, // 1 for dislike
+          feedbackType: 'dislike_click',
+          queryText: queryText || 'Query not available',
+          responseText: message.text
+        })
+      })
+      console.log('Dislike action recorded')
+    } catch (error) {
+      console.error('Failed to record dislike:', error)
+    }
   }
 
   if (hasLinks && !isUser) {
@@ -243,7 +261,23 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
             </div>
           )}
 
-          {/* Feedback form opens in new tab - no modal needed */}
+          {/* Show feedback message and link when disliked */}
+          {feedback === 'dislike' && (
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800 mb-2">
+                If you want to submit any feedback, then, please submit{' '}
+                <a
+                  href={`/feedback?dislike=true&userId=${currentUser}&conversationId=${conversationId}&messageId=${message.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline hover:text-blue-800 font-medium"
+                >
+                  here
+                </a>
+                .
+              </p>
+            </div>
+          )}
         </div>
         
         <div className={`text-xs text-gray-500 mt-1 ${isUser ? 'text-right' : 'text-left'}`}>
