@@ -16,7 +16,10 @@ export async function POST(request: NextRequest) {
       userId, 
       conversationId, 
       messageId, 
-      rating 
+      rating,
+      feedbackType,
+      queryText,
+      responseText
     } = body
     
     // Validate required fields
@@ -46,7 +49,10 @@ export async function POST(request: NextRequest) {
       userId: userId || undefined,
       conversationId: conversationId || undefined,
       messageId: messageId || undefined,
-      rating: rating || undefined
+      rating: rating || undefined,
+      feedbackType: feedbackType || 'form_submission',
+      queryText: queryText?.trim() || undefined,
+      responseText: responseText?.trim() || undefined
     })
     
     return NextResponse.json({

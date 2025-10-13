@@ -10,7 +10,8 @@
     "export-conversations": "node scripts/export-conversations.js",
     "analyze-conversations": "node scripts/analyze-conversations.js",
     "test-auth": "node scripts/test-auth.js",
-    "create-feedback-table": "node scripts/create-feedback-table.js"
+    "create-feedback-table": "node scripts/create-feedback-table.js",
+    "update-feedback-table": "node scripts/update-feedback-table.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
