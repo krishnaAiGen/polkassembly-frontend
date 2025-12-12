@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Tooltip } from 'react-tooltip';
 import AddressInline from './AddressInline';
+import { BookIcon, LightbulbIcon, LibraryIcon, BuildingIcon, LinkIcon } from './Icons';
 
 interface MessageBubbleProps {
   message: Message
@@ -44,11 +45,11 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
   const getSourceIcon = (sourceType: string) => {
     switch (sourceType) {
       case 'polkadot_wiki':
-        return '📚'
+        return <LibraryIcon className="w-4 h-4" />
       case 'polkassembly':
-        return '🏛️'
+        return <BuildingIcon className="w-4 h-4" />
       default:
-        return '🔗'
+        return <LinkIcon className="w-4 h-4" />
     }
   }
 
@@ -131,7 +132,10 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
           {/* Sources/Links Section - Horizontal Layout */}
           {hasLinks && !isUser && (
             <div className="mt-3 pt-3 border-t border-primary-100">
-              <p className="text-xs font-medium text-gray-600 mb-2">📖 Sources:</p>
+              <p className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1">
+                <BookIcon className="w-3 h-3" />
+                Sources:
+              </p>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {validSources.map((source, index) => (
                   <a
@@ -143,7 +147,7 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
                     className="flex-shrink-0 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg px-3 py-2 text-xs transition-colors group min-w-0"
                   >
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm">{getSourceIcon(source.source_type)}</span>
+                      <span className="text-sm text-gray-600">{getSourceIcon(source.source_type)}</span>
                       <div className="min-w-0">
                         <div className="font-medium text-gray-800 group-hover:text-primary-700 truncate max-w-[200px]">
                           {source.title}
@@ -179,7 +183,10 @@ export default function MessageBubble({ message, isStreaming = false, onFollowUp
           {/* Follow-up Questions Section - Horizontal Layout */}
           {hasFollowUps && !isUser && onFollowUpClick && (
             <div className="mt-3 pt-3 border-t border-primary-100">
-              <p className="text-xs font-medium text-gray-600 mb-2">💡 Questions:</p>
+              <p className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1">
+                <LightbulbIcon className="w-3 h-3" />
+                Questions:
+              </p>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {message.followUpQuestions!.map((question, index) => (
                   <div key={index}>

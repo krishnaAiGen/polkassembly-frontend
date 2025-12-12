@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { RocketIcon } from '@/components/Icons'
 
-export default function FeedbackPage() {
+function FeedbackForm() {
   const searchParams = useSearchParams()
   const [formData, setFormData] = useState({
     firstName: '',
@@ -108,7 +109,10 @@ export default function FeedbackPage() {
             </p>
           )}
           <div className="mt-4 text-sm opacity-75">
-            <p>🚀 Klara Feedback Form - Help us improve your experience</p>
+            <p className="flex items-center gap-1">
+              <RocketIcon className="w-4 h-4" />
+              Klara Feedback Form - Help us improve your experience
+            </p>
           </div>
         </div>
       </div>
@@ -257,5 +261,17 @@ export default function FeedbackPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function FeedbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-red-500 border-t-transparent"></div>
+      </div>
+    }>
+      <FeedbackForm />
+    </Suspense>
   )
 }

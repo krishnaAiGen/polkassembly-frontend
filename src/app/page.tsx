@@ -6,6 +6,7 @@ import ChatInterface from '@/components/ChatInterface';
 import ConversationSidebar from '@/components/ConversationSidebar';
 import { Message } from '@/types/chat';
 import { AuthService } from '@/lib/authService';
+import { ChatIcon } from '@/components/Icons';
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -158,7 +159,9 @@ export default function Home() {
             ) : (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center text-gray-500">
-                  <div className="text-6xl mb-4">💬</div>
+                  <div className="mb-4 flex justify-center">
+                    <ChatIcon className="w-24 h-24 text-gray-400" />
+                  </div>
                   <h2 className="text-xl font-semibold mb-2">Welcome to Klara</h2>
                   <p className="mb-4">Start a new conversation to begin chatting</p>
                   <button

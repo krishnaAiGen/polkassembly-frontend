@@ -9,6 +9,8 @@ import {
 import { db } from '@/lib/firebase'
 import { Message } from '@/types/chat'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     // Ensure database exists

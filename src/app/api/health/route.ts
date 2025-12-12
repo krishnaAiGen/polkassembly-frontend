@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
       responseTime: `${responseTime}ms`,
       performance: {
-        acceptable: responseTime < 1000 ? '✅' : '⚠️',
+        acceptable: responseTime < 1000 ? 'OK' : 'WARNING',
         avgResponseTime: `${responseTime}ms`
       },
       services: {

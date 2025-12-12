@@ -6,6 +6,7 @@ import MessageBubble from './MessageBubble'
 import Mascot from './Mascot';
 import AddressInline from './AddressInline';
 import React from 'react';
+import { PartyIcon, BookIcon, RocketIcon, PencilIcon } from './Icons';
 interface ChatInterfaceProps {
   currentUser: string
   messages: Message[]
@@ -387,7 +388,7 @@ export default function ChatInterface({ currentUser, messages, conversationId, o
               <div className="w-5 h-5 bg-white rounded-full"></div>
             </div>
             <div>
-              <h2 className="font-semibold text-gray-800">Polkassembly Chat</h2>
+              <h2 className="font-semibold text-gray-800">Klara AI</h2>
               <p className="text-sm text-gray-600 flex items-center gap-2">
                 Welcome, {isWalletAddress ? (
                   <AddressInline address={currentUser} iconSize={16} textClassName="text-gray-600" />
@@ -399,7 +400,7 @@ export default function ChatInterface({ currentUser, messages, conversationId, o
                 </span>
                 {totalStats && (
                   <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <span>🎉</span>
+                    <PartyIcon className="w-4 h-4" />
                     <span>{totalStats.totalConversations} total conversations</span>
                     <span>•</span>
                     <span>{totalStats.totalUsers} users</span>
@@ -415,7 +416,7 @@ export default function ChatInterface({ currentUser, messages, conversationId, o
               rel="noopener noreferrer"
               className="text-gray-500 hover:text-blue-500 transition-colors px-3 py-1 rounded-lg hover:bg-blue-50 flex items-center gap-1"
             >
-              <span>📖</span>
+              <BookIcon className="w-4 h-4" />
               <span>Usage Guide</span>
             </a>
             <button
@@ -432,16 +433,18 @@ export default function ChatInterface({ currentUser, messages, conversationId, o
       <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white px-4 py-3 text-center shadow-md">
         <div className="space-y-2">
           <p className="text-sm font-medium">
-            🚀 This is the beta version of Klara for testing. Please share any feedback or issues you encounter{' '}
+            <RocketIcon className="w-4 h-4 inline-block align-middle mr-1" />
+            This is the beta version of Klara for testing. Please share any feedback or issues you encounter{' '}
             <a 
               href="/feedback" 
-              target="_blank" 
+              target="_blank"
               rel="noopener noreferrer"
               className="text-white underline hover:text-yellow-100 font-bold"
             >
               here
             </a>
-            ! 📝
+            !{' '}
+            <PencilIcon className="w-4 h-4 inline-block align-middle" />
           </p>
           <p className="text-xs opacity-90">
             <strong>Privacy Notice:</strong> Chat conversations are monitored and analyzed to improve Klara's responses and user experience. No personal data is shared with third parties.
