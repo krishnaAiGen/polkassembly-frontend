@@ -303,7 +303,7 @@ export async function POST(request: NextRequest) {
     // Add rate limit warning if remaining requests is low
     let finalResponseText = aiResponseText
     if (remainingRequests !== undefined && remainingRequests < 5) {
-      finalResponseText += '\n\n⚠️ **Warning**: You are approaching the usage limit. You have ' + remainingRequests + ' requests remaining this minute. Please slow down to avoid being blocked.'
+      finalResponseText += '\n\n**Warning**: You are approaching the usage limit. You have ' + remainingRequests + ' requests remaining this minute. Please slow down to avoid being blocked.'
     }
 
     // Save AI response to database

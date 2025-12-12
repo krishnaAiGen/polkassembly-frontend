@@ -102,32 +102,7 @@ export default function ConversationSidebar({
     <div className="w-80 bg-white/90 backdrop-blur-sm border-r border-primary-200 flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-primary-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-pink-500 rounded-full flex items-center justify-center">
-              <div className="w-5 h-5 bg-white rounded-full"></div>
-            </div>
-            <div>
-              <h2 className="font-medium text-sm text-gray-800">Klara</h2>
-              <p className="text-xs text-gray-500">
-                {isWalletAddress ? (
-                  <AddressInline address={currentUser} iconSize={10} textClassName="text-gray-500" />
-                ) : (
-                  <span>{displayName}</span>
-                )}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onLogout}
-            className="text-gray-400 hover:text-red-500 transition-colors p-1"
-            title="Logout"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </button>
-        </div>
+        
 
         {/* New Chat Button */}
         <button
@@ -186,8 +161,7 @@ export default function ConversationSidebar({
       {/* Footer */}
       <div className="p-2 border-t border-gray-200">
         <div className="text-xs text-gray-400 text-center">
-          <p className="text-xs">Klara AI Assistant</p>
-          <p className="text-xs">Polkassembly Chat</p>
+          <p className="text-xs">Klara AI </p>
         </div>
       </div>
     </div>
